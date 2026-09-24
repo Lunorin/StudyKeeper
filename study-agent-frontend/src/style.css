@@ -1,0 +1,605 @@
+/* ==================== Element Plus 主题变量覆盖 ==================== */
+/* 必须排在 element-plus/dist/index.css 之后(见 main.js 的引入顺序),同优先级下后者生效 */
+:root {
+  /* 主色:原型里的紫色强调色 */
+  --el-color-primary: #6b7ac9;
+  --el-color-primary-light-3: #8b9cd9;
+  --el-color-primary-light-5: #a5b4e3;
+  --el-color-primary-light-7: #c0cbee;
+  --el-color-primary-light-8: #d0d8f3;
+  --el-color-primary-light-9: #e8ebfd;
+  --el-color-primary-dark-2: #5a6ab0;
+
+  /* 圆角:原型里按钮 / 输入框统一 14px */
+  --el-border-radius-base: 14px;
+}
+
+/* ==================== 全局基础样式 ==================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+/* 渐变背景:渐变色值与原型 body 完全一致;fixed 让页面滚动时底色不跟着跑 */
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #1e293b;
+  background: linear-gradient(
+    145deg,
+    #fde9ed 0%,
+    #e2f0e8 25%,
+    #e3e6fa 55%,
+    #d9eff5 80%,
+    #f5e6f0 100%
+  );
+  background-attachment: fixed;
+}
+
+/* 滚动条:细一点、浅一点(原型同款) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4dcec;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b9c4d9;
+}
+
+/* ==================== 居中圆角卡片容器 ==================== */
+/* 由 App.vue 挂在根节点上;登录页用 .app-container--plain,不套卡片 */
+.app-container {
+  width: 100%;
+  max-width: 1200px;
+  min-height: calc(100vh - 48px);
+  margin: 24px auto;
+  padding: 28px 32px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  box-shadow:
+    0 25px 50px -12px rgba(140, 160, 210, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+}
+
+/* 登录页:不套卡片,但要撑满视口,LoginView 的垂直居中才生效 */
+.app-container--plain {
+  height: 100%;
+}
+
+/* 各 view 共用的内容容器,避免在每个 view 里重复写 CSS */
+.page {
+  padding: 24px;
+  text-align: left;
+}
+
+/* ==================== 原型风格:Element Plus 组件对齐 ==================== */
+/* 说明:原型用 Tailwind + 自定义 .card / .btn-primary / .weekday-btn 等类;
+   这里把这些视觉落到 Element Plus 组件上,各页面不用改结构就能贴近原型。 */
+
+/* 卡片:原型 .card */
+.el-card {
+  --el-card-border-color: #eef2f8;
+  --el-card-padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px -10px rgba(140, 160, 210, 0.08);
+}
+
+/* 默认按钮:原型 button/.btn */
+.el-button {
+  border-color: #e2e8f0;
+  border-radius: 14px;
+  color: #1e293b;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.el-button:hover,
+.el-button:focus {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px -6px rgba(140, 160, 210, 0.15);
+}
+
+/* 主按钮:原型 .btn-primary(浅紫渐变) */
+.el-button--primary {
+  background: linear-gradient(135deg, #d3d9fd 0%, #e8d6f7 100%);
+  border: none;
+  color: #494f85;
+  font-weight: 600;
+  box-shadow: 0 6px 14px rgba(190, 197, 255, 0.5);
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  background: linear-gradient(135deg, #c5cefd 0%, #ddc9f5 100%);
+  border: none;
+  color: #3a4070;
+  box-shadow: 0 8px 20px rgba(160, 170, 255, 0.6);
+}
+
+.el-button--primary.is-disabled,
+.el-button--primary.is-disabled:hover,
+.el-button--primary.is-loading {
+  background: #e3e6fb;
+  border: none;
+  color: #9aa2c8;
+  box-shadow: none;
+  transform: none;
+}
+
+/* 危险按钮(plain):原型里删除按钮是浅红描边 */
+.el-button--danger.is-plain {
+  border-color: #fbcfd4;
+  color: #e06a7a;
+}
+
+.el-button--danger.is-plain:hover {
+  background: #fef5f6;
+  border-color: #f5b7bf;
+  color: #d4576a;
+}
+
+/* 输入框 / 文本域:原型 input, textarea */
+.el-input__wrapper,
+.el-textarea__inner {
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 0 0 1px #e2e8f0 inset;
+}
+
+.el-textarea__inner {
+  padding: 10px 16px;
+}
+
+.el-input__wrapper:hover,
+.el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px #cbd5e1 inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  box-shadow:
+    0 0 0 1px #b0b9f0 inset,
+    0 0 0 4px rgba(176, 185, 240, 0.15);
+}
+
+/* 标签:原型 .status-badge 那种胶囊 */
+.el-tag {
+  border: none;
+  border-radius: 20px;
+}
+
+/* 弹窗:原型 .dialog-box + .dialog-overlay */
+.el-dialog {
+  --el-dialog-padding-primary: 24px;
+  border-radius: 24px;
+  box-shadow: 0 30px 50px -20px rgba(120, 140, 220, 0.3);
+}
+
+.el-dialog__title {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.el-overlay {
+  background-color: rgba(220, 230, 255, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* 页签:原型 .tab-item */
+.el-tabs__header {
+  margin-bottom: 20px;
+}
+
+.el-tabs__nav-wrap::after {
+  height: 1px;
+  background-color: #f0f4fa;
+}
+
+.el-tabs__active-bar {
+  display: none;
+}
+
+.el-tabs__item {
+  height: auto;
+  padding: 10px 22px !important;
+  border-radius: 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.el-tabs__item:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.el-tabs__item.is-active {
+  background: #e5e9fc;
+  color: #3e4278;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(168, 179, 247, 0.4);
+}
+
+/* 周几切换:原型 .weekday-btn(彼此分开的胶囊,而不是 EP 默认的连体按钮) */
+.el-radio-button__inner {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #475569;
+  background: #fff;
+  box-shadow: none !important;
+  transition: all 0.2s ease;
+}
+
+.el-radio-button:not(:first-child) {
+  margin-left: 8px;
+}
+
+.el-radio-button__inner:hover {
+  color: #475569;
+  background: #f8fafc;
+}
+
+.el-radio-button__original-radio:checked + .el-radio-button__inner {
+  background: #e2e8fc;
+  border-color: #cbd5ff !important;
+  color: #3b3f7a;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(160, 170, 255, 0.3) !important;
+}
+
+/* 覆盖 EP 给首/尾子项单独设的圆角,保证每颗都是独立胶囊 */
+.el-radio-button:first-child .el-radio-button__inner,
+.el-radio-button:last-child .el-radio-button__inner {
+  border-radius: 12px !important;
+}
+
+/* ==================== 原型组件样式(各页面复用) ==================== */
+
+/* 图标底衬:原型 .icon-circle */
+.icon-circle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: #f0f4ff;
+  color: #6b7ac9;
+  font-size: 1.1rem;
+}
+
+.icon-circle.sun {
+  background: #ffefe3;
+  color: #d98c2e;
+}
+
+.icon-circle.calendar {
+  background: #e0f2fe;
+  color: #3b82b6;
+}
+
+.icon-circle.chart {
+  background: #f3e8ff;
+  color: #9b6bc7;
+}
+
+/* 登录页那种大号图标底衬 */
+.icon-circle.lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: #e4e9ff;
+  color: #6b7ac9;
+  font-size: 1.6rem;
+}
+
+/* 状态徽章:原型 .status-badge */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border-radius: 20px;
+}
+
+.status-badge.done {
+  background: #d1fae5;
+  color: #0f766e;
+}
+
+/* AI 预览行:原型 .ai-task-preview / .ai-task-index */
+.ai-task-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e8edff;
+  border-radius: 14px;
+  background: #f6f8ff;
+}
+
+.ai-task-index {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #dde4ff;
+  color: #5a6ab0;
+}
+
+/* 渐变标题字:原型 .text-gradient */
+.text-gradient {
+  background: linear-gradient(135deg, #8b9cf0 0%, #c9a9e8 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 空计划提示条:原型 .empty-plan-tip */
+.empty-plan-tip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border: 1px solid #e2e8ff;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #eef2ff 0%, #f7ebff 55%, #eaf6ff 100%);
+  box-shadow: 0 6px 18px -8px rgba(160, 170, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.empty-plan-tip:hover {
+  transform: translateY(-2px);
+  border-color: #d3ddff;
+  box-shadow: 0 12px 24px -10px rgba(160, 170, 255, 0.6);
+}
+
+/* 页面/区块大标题:原型 text-xl font-bold */
+.page-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* 魔法按钮(原型 .btn-magic,用于「AI 帮我加」这类 AI 操作):
+   用法:<el-button class="btn-magic" :icon="MagicStick">AI 帮我加</el-button> */
+.el-button.btn-magic {
+  background: linear-gradient(135deg, #e4dcfb 0%, #d6e8fb 100%);
+  border: none;
+  color: #545b95;
+  font-weight: 600;
+  box-shadow: 0 6px 14px rgba(200, 200, 255, 0.45);
+}
+
+.el-button.btn-magic:hover,
+.el-button.btn-magic:focus {
+  background: linear-gradient(135deg, #d9d0f8 0%, #c7dffa 100%);
+  border: none;
+  color: #454b80;
+  box-shadow: 0 8px 20px rgba(180, 185, 255, 0.55);
+}
+
+/* 时间双下拉框(原型 .time-select:小时 + 分钟,配合 .time-picker / .time-sep 使用) */
+.time-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.time-select {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 26px 10px 14px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: #1e293b;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.time-select:focus {
+  border-color: #b0b9f0;
+  box-shadow: 0 0 0 4px rgba(176, 185, 240, 0.15);
+  outline: none;
+}
+
+.time-sep {
+  flex: none;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+/* ==================== 认证页(登录 / 注册 / 找回密码)共用布局 ==================== */
+/* 说明:三个认证页都用 HTML 的语义类(.auth-*)而不是 scoped 样式重复写一遍;
+   视觉沿用原型登录页:居中卡片式布局、紫色渐变标题、圆角输入框与按钮。 */
+
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 40px 16px;
+}
+
+.auth-box {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+/* 大号圆角图标底衬(配合 .icon-circle.lg 使用) */
+.auth-icon {
+  margin: 0 auto 24px;
+}
+
+.auth-title {
+  margin: 0 0 8px;
+  font-size: 1.875rem;
+  font-weight: 800;
+}
+
+.auth-subtitle {
+  margin: 0 0 32px;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.auth-form {
+  text-align: left;
+}
+
+.auth-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 16px;
+}
+
+/* 底部提示行:默认两端对齐,加 .center 变居中(登录 / 注册 / 找回密码都用居中) */
+.auth-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.auth-links.center {
+  justify-content: center;
+}
+
+.auth-link {
+  color: #7b8bd6;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* 验证码输入框 + 右侧「获取验证码 / 重新发送」按钮同行 */
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.code-row .el-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.code-row .el-button {
+  flex: none;
+}
+
+/* 找回密码的两步指示 */
+.auth-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 24px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.auth-step {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.auth-step.is-active {
+  background: #e5e9fc;
+  color: #3e4278;
+  box-shadow: 0 4px 12px rgba(168, 179, 247, 0.4);
+}
+
+.auth-step-arrow {
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+/* 找回密码第 2 步顶部展示的当前邮箱 */
+.auth-email-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin: 0 0 16px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5185;
+  background: #eef1fe;
+  border-radius: 20px;
+  word-break: break-all;
+}
+
+
+
+

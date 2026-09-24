@@ -1,0 +1,13 @@
+# 依赖与产物都在镜像里重新生成，宿主机上的这些不进构建上下文
+node_modules/
+dist/
+.vscode/
+.idea/
+.git/
+.gitignore
+.env
+.env.*
+*.log
+docs/
+Dockerfile
+.dockerignore

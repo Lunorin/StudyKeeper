@@ -1,0 +1,14 @@
+# 虚拟环境、字节码缓存、本地 .env（含 API Key）都不进镜像
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.git/
+.idea/
+.vscode/
+data/
+*.log
+Dockerfile
+.dockerignore

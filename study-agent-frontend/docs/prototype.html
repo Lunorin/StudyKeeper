@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习监督 · 多彩浅色版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, 
+                #fde9ed 0%,
+                #e2f0e8 25%,
+                #e3e6fa 55%,
+                #d9eff5 80%,
+                #f5e6f0 100%
+            );
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .app-container {
+            max-width: 960px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(140, 160, 210, 0.2), 
+                        0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+            padding: 28px 32px 32px 32px;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        button, .btn, .nav-link, .tab-item, [data-clickable] {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        button:hover, .btn:hover, .nav-link:hover, .tab-item:hover, [data-clickable]:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px -6px rgba(140, 160, 210, 0.15);
+        }
+
+        button:active, .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .nav-link {
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: inline-block;
+            cursor: pointer;
+            border-radius: 12px;
+            box-shadow: none;
+        }
+
+        .nav-link:hover {
+            background: #f1f5f9;
+            color: #334155;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .nav-link.active {
+            background: #e8ebfd;
+            color: #4e5590;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(168, 179, 247, 0.4);
+        }
+
+        .nav-link.active:hover {
+            background: #dfe3fd;
+            color: #3e467a;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #d3d9fd 0%, #e8d6f7 100%);
+            border: none;
+            color: #494f85;
+            font-weight: 600;
+            box-shadow: 0 6px 14px rgba(190, 197, 255, 0.5);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #c5cefd 0%, #ddc9f5 100%);
+            box-shadow: 0 8px 20px rgba(160, 170, 255, 0.6);
+            color: #3a4070;
+            transform: translateY(-2px);
+        }
+
+        .btn-magic {
+            background: linear-gradient(135deg, #e4dcfb 0%, #d6e8fb 100%);
+            border: none;
+            color: #545b95;
+            font-weight: 600;
+            box-shadow: 0 6px 14px rgba(200, 200, 255, 0.45);
+        }
+
+        .btn-magic:hover {
+            background: linear-gradient(135deg, #d9d0f8 0%, #c7dffa 100%);
+            box-shadow: 0 8px 20px rgba(180, 185, 255, 0.55);
+            color: #454b80;
+            transform: translateY(-2px);
+        }
+
+        .dialog-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(220, 230, 255, 0.5);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .dialog-box {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 28px;
+            width: 460px;
+            max-width: 90vw;
+            box-shadow: 0 30px 50px -20px rgba(120, 140, 220, 0.3);
+            animation: slideUp 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 160px;
+            padding: 8px 0;
+        }
+
+        .bar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .bar-fill {
+            width: 100%;
+            background: linear-gradient(180deg, #b8c5fd 0%, #d9c7f0 100%);
+            height: 0;
+            border-radius: 8px 8px 4px 4px;
+            transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 10px rgba(165, 180, 252, 0.5);
+        }
+
+        .bar-label {
+            font-size: 0.75rem;
+            margin-top: 6px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .task-item, .long-task-item {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-radius: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .task-item:hover, .long-task-item:hover {
+            background: #fafbff;
+        }
+
+        .task-item:last-child, .long-task-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: none;
+            padding: 4px 12px;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .status-badge.done {
+            background: #d1fae5;
+            color: #0f766e;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px 18px;
+            border: none;
+            background: #f1f5f9;
+            margin-bottom: 12px;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            line-height: 1.5;
+        }
+
+        .message-user {
+            margin-left: auto;
+            background: #dce8ff;
+            color: #1e293b;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message-user .text-xs {
+            color: #5e6f8d !important;
+        }
+
+        .message-ai {
+            margin-right: auto;
+            background: #ffffff;
+            border: 1px solid #e9eef4;
+            border-bottom-left-radius: 6px;
+        }
+
+        input[type="text"], input[type="password"], select, textarea {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 10px 16px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: #ffffff;
+            color: #1e293b;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 96px;
+            line-height: 1.6;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
+            border-color: #b0b9f0;
+            box-shadow: 0 0 0 4px rgba(176, 185, 240, 0.15);
+            outline: none;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #eef2f8;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 20px -10px rgba(140, 160, 210, 0.08);
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #a5b4fc;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #8b9cf0 0%, #c9a9e8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d4dcec; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b9c4d9; }
+
+        .fade-in { animation: fadeInUp 0.4s ease; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .weekday-btn {
+            border: 1px solid #e2e8f0;
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .weekday-btn.active {
+            background: #e2e8fc;
+            color: #3b3f7a;
+            border-color: #cbd5ff;
+            box-shadow: 0 4px 12px rgba(160, 170, 255, 0.3);
+            font-weight: 600;
+        }
+
+        .tab-item {
+            border: none;
+            background: transparent;
+            padding: 10px 22px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #64748b;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-item:hover {
+            background: #f1f5f9;
+            color: #334155;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .tab-item.active {
+            background: #e5e9fc;
+            color: #3e4278;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(168, 179, 247, 0.4);
+        }
+
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f4ff;
+            color: #6b7ac9;
+            font-size: 1.1rem;
+        }
+
+        .icon-circle.sun { background: #ffefe3; color: #d98c2e; }
+        .icon-circle.calendar { background: #e0f2fe; color: #3b82b6; }
+        .icon-circle.chart { background: #f3e8ff; color: #9b6bc7; }
+
+        .border-slate-100 { border-color: #f0f4fa; }
+        .text-indigo-600 { color: #6d7bcb; }
+        .text-amber-600 { color: #c28b3a; }
+
+        .ai-task-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #f6f8ff;
+            border: 1px solid #e8edff;
+        }
+        .ai-task-index {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            background: #dde4ff;
+            color: #5a6ab0;
+            flex-shrink: 0;
+        }
+
+        .empty-plan-tip {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #eef2ff 0%, #f7ebff 55%, #eaf6ff 100%);
+            border: 1px solid #e2e8ff;
+            box-shadow: 0 6px 18px -8px rgba(160, 170, 255, 0.4);
+            transition: all 0.25s ease;
+        }
+
+        .empty-plan-tip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -10px rgba(160, 170, 255, 0.6);
+            border-color: #d3ddff;
+        }
+
+        .time-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 14px;
+            padding: 10px 26px 10px 14px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            cursor: pointer;
+        }
+
+        /* 课程表网格 */
+        .timetable-grid-container {
+            height: 600px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            background: #ffffff;
+        }
+
+        .timetable-header {
+            display: flex;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .timetable-header-day {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            border-right: 1px solid #f1f5f9;
+        }
+
+        .timetable-header-day:last-child { border-right: none; }
+
+        .timetable-body {
+            display: flex;
+            position: relative;
+        }
+
+        .timetable-time-col {
+            width: 60px;
+            flex-shrink: 0;
+            border-right: 1px solid #e2e8f0;
+            background: #ffffff;
+            position: relative;
+            z-index: 2;
+        }
+
+        .timetable-time-label {
+            height: 60px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-align: center;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 4px;
+            box-sizing: border-box;
+        }
+
+        .timetable-grid-bg {
+            flex: 1;
+            position: relative;
+            background-image: repeating-linear-gradient(to bottom, transparent, transparent 59px, #f8fafc 59px, #f8fafc 60px);
+        }
+
+        .course-block {
+            position: absolute;
+            border-radius: 8px;
+            padding: 6px 4px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .course-block:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            z-index: 5;
+        }
+
+        .course-block-inner {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 1px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            line-height: 1.3;
+            word-break: break-all;
+        }
+
+        .course-delete-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ef4444;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+            padding: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .course-block:hover .course-delete-btn { opacity: 1; }
+
+        /* 用户下拉菜单 */
+        .user-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 0.875rem;
+            color: #334155;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s ease;
+            box-shadow: none;
+            font-weight: 500;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .user-menu-item:hover {
+            background: #f1f5f9;
+            transform: none;
+            box-shadow: none;
+            border-color: transparent;
+        }
+
+        .user-menu-item.user-menu-danger { color: #e11d48; }
+        .user-menu-item.user-menu-danger:hover { background: #fef2f2; }
+
+        .avatar-option {
+            transition: all 0.15s ease;
+            font-family: inherit;
+            padding: 0;
+            box-shadow: none;
+        }
+
+        .avatar-option:hover {
+            transform: scale(1.08);
+            background: #eef2ff;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="app-container fade-in">
+    <div id="page-container"></div>
+</div>
+
+<script>
+    // ==================== 用户资料（localStorage） ====================
+    const STORAGE_KEY = 'study_user_profile_v1';
+
+    const DEFAULT_AVATARS = ['🎓', '📚', '✏️', '🌟', '🚀', '🎯', '🎨', '🦊', '🐼', '🐧'];
+
+    let userProfile = {
+        avatar: '🎓',
+        nickname: '学习同学',
+        username: 'student',
+        phone: '',
+        email: '',
+        notifications: {
+            taskReminder: true,
+            courseReminder: true,
+            dailyReport: false,
+            sound: true
+        },
+        feedbacks: []
+    };
+
+    function loadUserProfile() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                userProfile = Object.assign({}, userProfile, parsed);
+                userProfile.notifications = Object.assign(
+                    { taskReminder: true, courseReminder: true, dailyReport: false, sound: true },
+                    parsed.notifications || {}
+                );
+                if (!Array.isArray(userProfile.feedbacks)) userProfile.feedbacks = [];
+            }
+        } catch (e) { console.warn('加载用户资料失败', e); }
+    }
+
+    function saveUserProfile() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(userProfile));
+        } catch (e) {
+            console.warn('保存用户资料失败', e);
+            alert('保存失败：可能是头像图片过大，请换一张小图。');
+        }
+    }
+
+    // ==================== 动态日期工具 ====================
+    function getTodayString() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const date = now.getDate();
+        const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        return `${year}年${month}月${date}日 ${weekdays[now.getDay()]}`;
+    }
+
+    function getTodayWeekdayCN() {
+        const map = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        return map[new Date().getDay()];
+    }
+
+    // ==================== 时间下拉框 ====================
+    function buildHourOptions(selectedHour) {
+        let html = '';
+        for (let h = 0; h < 24; h++) {
+            const hv = String(h).padStart(2, '0');
+            html += `<option value="${hv}" ${hv === selectedHour ? 'selected' : ''}>${hv}</option>`;
+        }
+        return html;
+    }
+
+    function buildMinuteOptions(selectedMinute) {
+        let html = '';
+        for (let m = 0; m < 60; m += 5) {
+            const mv = String(m).padStart(2, '0');
+            html += `<option value="${mv}" ${mv === selectedMinute ? 'selected' : ''}>${mv}</option>`;
+        }
+        return html;
+    }
+
+    // ==================== 时段解析与时长计算 ====================
+    function parseTimeRange(timeStr) {
+        if (!timeStr) return null;
+        const m = String(timeStr).match(/^\s*(\d{1,2}):(\d{2})\s*[-~至到]\s*(\d{1,2}):(\d{2})\s*$/);
+        if (!m) return null;
+        return {
+            start: m[1].padStart(2, '0') + ':' + m[2],
+            end: m[3].padStart(2, '0') + ':' + m[4]
+        };
+    }
+
+    function calcDuration(start, end) {
+        if (!start || !end) return '时长待定';
+        const [sh, sm] = start.split(':').map(Number);
+        const [eh, em] = end.split(':').map(Number);
+        let totalMin = (eh * 60 + em) - (sh * 60 + sm);
+        if (totalMin <= 0) return '时长待定';
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        if (h === 0) return m + '分钟';
+        if (m === 0) return h + '小时';
+        return h + '小时' + m + '分钟';
+    }
+
+    function getDurationFromTime(timeStr) {
+        const parsed = parseTimeRange(timeStr);
+        if (!parsed) return '时长待定';
+        return calcDuration(parsed.start, parsed.end);
+    }
+
+    // ==================== 课程表解析与颜色分配 ====================
+    function parseTimetable() {
+        const parsed = [];
+        const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+        dayNames.forEach((day, dayIndex) => {
+            const courses = timetable[day] || [];
+            courses.forEach(courseStr => {
+                const match = courseStr.match(/^(.*?)\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+                if (match) {
+                    const title = match[1].trim();
+                    const startH = parseInt(match[2], 10);
+                    const startM = parseInt(match[3], 10);
+                    const endH = parseInt(match[4], 10);
+                    const endM = parseInt(match[5], 10);
+                    const startMin = startH * 60 + startM;
+                    const endMin = endH * 60 + endM;
+                    parsed.push({
+                        day, dayIndex, title,
+                        startTime: `${match[2].padStart(2, '0')}:${match[3]}`,
+                        endTime: `${match[4].padStart(2, '0')}:${match[5]}`,
+                        startMin, endMin, durationMin: endMin - startMin
+                    });
+                }
+            });
+        });
+        return parsed;
+    }
+
+    const COURSE_COLORS = [
+        { bg: '#FFFDE7', border: '#FFF9C4', text: '#F57F17' },
+        { bg: '#E3F2FD', border: '#BBDEFB', text: '#0D47A1' },
+        { bg: '#E8F5E9', border: '#C8E6C9', text: '#1B5E20' },
+        { bg: '#F3E5F5', border: '#E1BEE7', text: '#4A148C' },
+        { bg: '#FFEBEE', border: '#FFCDD2', text: '#B71C1C' },
+        { bg: '#E0F7FA', border: '#B2EBF2', text: '#006064' },
+        { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100' }
+    ];
+
+    function getCourseColor(name) {
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return COURSE_COLORS[Math.abs(hash) % COURSE_COLORS.length];
+    }
+
+    // ==================== 状态管理 ====================
+    let currentPage = 'login';
+
+    const todayTasks = [
+        { id: 1, title: '背单词 50 个', time: '07:00-07:30', status: '已完成' },
+        { id: 2, title: '数学练习册 P20-22', time: '09:00-10:00', status: '未完成' },
+        { id: 3, title: '英语听力练习', time: '14:00-14:40', status: '未完成' },
+        { id: 4, title: '语文古诗词背诵', time: '16:00-16:30', status: '已完成' },
+        { id: 5, title: '错题整理', time: '19:00-20:00', status: '未完成' }
+    ];
+
+    const longTasks = [
+        { id: 101, title: '每日背单词', duration: '30分钟', repeat: [1,3,5], enabled: true },
+        { id: 102, title: '数学压轴题训练', duration: '45分钟', repeat: [2,4], enabled: true },
+        { id: 103, title: '英语阅读', duration: '20分钟', repeat: [1,2,3,4,5], enabled: false },
+    ];
+
+    const chatMessages = [
+        { role: 'user', text: '帮我安排一下今天的任务，重点数学。' },
+        { role: 'ai', text: '已为你添加任务：背单词 30 分钟。' },
+        { role: 'user', text: '好的，还有别的吗？' },
+        { role: 'ai', text: '建议加入数学练习 60 分钟，已经加在 9:00-10:00。' },
+        { role: 'user', text: '试试说：每周一三五 8:00-9:40 高等数学' },
+        { role: 'ai', text: '你可以直接告诉我课程安排，例如“每周一三五 8:00-9:40 高等数学”，我会自动添加到课程表。' }
+    ];
+
+    const timetable = {
+        周一: ['高等数学 08:00-09:40', '大学英语 10:00-11:40'],
+        周二: ['线性代数 08:00-09:40', '程序设计 14:00-15:40'],
+        周三: ['高等数学 08:00-09:40', '大学物理 10:00-11:40'],
+        周四: ['数据结构 08:00-09:40', '体育 14:00-15:40'],
+        周五: ['概率论 08:00-09:40', '大学英语 10:00-11:40'],
+        周六: ['选修课：心理学 10:00-11:40'],
+        周日: [],
+    };
+
+    let breaks = [
+        { id: 1, start: '10:00', end: '10:20' },
+        { id: 2, start: '15:00', end: '15:15' },
+    ];
+
+    const weeklyStats = [4, 3, 5, 2, 4, 3, 5];
+    const dayNames = ['一', '二', '三', '四', '五', '六', '日'];
+
+    let currentTab = '课程表';
+    let selectedWeekday = getTodayWeekdayCN();
+    let editingLongTask = null;
+
+    // ==================== 用户 UI 片段 ====================
+    function renderAvatarInner() {
+        const a = userProfile.avatar || '🎓';
+        if (a.startsWith('data:')) {
+            return `<img src="${a}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        }
+        return `<span style="font-size:1.1rem;line-height:1;">${a}</span>`;
+    }
+
+    function renderUserButtonHtml() {
+        return `
+            <div class="relative" id="userMenuContainer">
+                <button id="userAvatarBtn" title="${userProfile.nickname}" class="border border-slate-200 bg-white rounded-full hover:shadow-md transition-all" style="width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                    ${renderAvatarInner()}
+                </button>
+                <div id="userMenuDropdown" class="hidden" style="position:absolute;top:48px;right:0;width:210px;background:#fff;border-radius:16px;box-shadow:0 10px 40px -10px rgba(120,140,220,0.35);border:1px solid #eef2f8;padding:8px;z-index:50;">
+                    <button class="user-menu-item" data-menu="edit">
+                        <i class="fa-regular fa-user" style="width:18px;color:#6b7ac9;"></i>
+                        <span>编辑资料</span>
+                    </button>
+                    <button class="user-menu-item" data-menu="bind">
+                        <i class="fa-solid fa-mobile-screen" style="width:18px;color:#6b7ac9;"></i>
+                        <span>绑定手机号/邮箱</span>
+                    </button>
+                    <button class="user-menu-item" data-menu="notify">
+                        <i class="fa-regular fa-bell" style="width:18px;color:#6b7ac9;"></i>
+                        <span>通知设置</span>
+                    </button>
+                    <button class="user-menu-item" data-menu="feedback">
+                        <i class="fa-regular fa-comment-dots" style="width:18px;color:#6b7ac9;"></i>
+                        <span>意见反馈</span>
+                    </button>
+                    <div style="height:1px;background:#f1f5f9;margin:6px 8px;"></div>
+                    <button class="user-menu-item user-menu-danger" data-menu="logout">
+                        <i class="fa-solid fa-arrow-right-from-bracket" style="width:18px;"></i>
+                        <span>退出登录</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ==================== 渲染函数 ====================
+    function render() {
+        const container = document.getElementById('page-container');
+        if (currentPage === 'login') {
+            container.innerHTML = renderLogin();
+        } else if (currentPage === 'today') {
+            container.innerHTML = renderToday();
+        } else if (currentPage === 'manage') {
+            container.innerHTML = renderManage();
+        } else if (currentPage === 'chat') {
+            container.innerHTML = renderChat();
+        } else if (currentPage === 'settings') {
+            container.innerHTML = renderSettings();
+        }
+        bindGlobalEvents();
+    }
+
+    // ---------- 登录页 ----------
+    function renderLogin() {
+        return `
+            <div class="flex flex-col items-center justify-center py-12">
+                <div class="icon-circle mb-6" style="width:64px;height:64px;font-size:1.6rem;border-radius:20px; background: #e4e9ff; color: #6b7ac9;">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold mb-2 text-gradient">学习监督</h1>
+                <p class="text-slate-500 text-sm mb-8">开始高效学习的一天</p>
+
+                <div class="w-full max-w-sm space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            <i class="fa-regular fa-envelope mr-1 text-slate-400"></i> 账号
+                        </label>
+                        <input type="text" placeholder="手机号 / 邮箱" value="student@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            <i class="fa-solid fa-lock mr-1 text-slate-400"></i> 密码
+                        </label>
+                        <input type="password" placeholder="密码" value="123456">
+                    </div>
+                    <button id="loginBtn" class="w-full btn-primary py-3 text-sm font-semibold" style="border-radius:16px;">
+                        <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> 登录
+                    </button>
+                    <p class="text-center text-sm text-slate-500 mt-4">
+                        还没有账号？<span id="goRegister" class="text-indigo-600 font-medium cursor-pointer hover:underline" style="color: #7b8bd6;">立即注册</span>
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+
+    // ---------- 今日任务页 ----------
+    function renderToday() {
+        const total = todayTasks.length;
+        const completed = todayTasks.filter(t => t.status === '已完成').length;
+        const percent = total ? Math.round((completed / total) * 100) : 0;
+        const todayStr = getTodayString();
+        const isEmpty = todayTasks.length === 0;
+
+        let tasksHtml = '';
+        todayTasks.forEach(task => {
+            const isDone = task.status === '已完成';
+            const duration = getDurationFromTime(task.time);
+            tasksHtml += `
+                <div class="task-item">
+                    <div class="flex-1 min-w-[160px]">
+                        <div class="font-semibold text-slate-800 flex items-center gap-2">
+                            ${isDone ? '<i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>' : '<i class="fa-regular fa-circle text-slate-300 text-sm"></i>'}
+                            ${task.title}
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1 ml-5">
+                            <i class="fa-regular fa-clock mr-1"></i>${task.time} · ${duration}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="status-badge ${isDone ? 'done' : ''}">${task.status}</span>
+                        ${!isDone ? `<button class="complete-btn btn-primary px-3 py-1.5 text-xs" data-id="${task.id}" style="border-radius:10px;">完成</button>` : ''}
+                        <button class="edit-today-btn border border-slate-200 px-2.5 py-1.5 text-xs rounded-lg hover:bg-slate-50" data-id="${task.id}" title="编辑">
+                            <i class="fa-regular fa-pen-to-square"></i>
+                        </button>
+                        <button class="delete-today-btn border border-slate-200 px-2.5 py-1.5 text-xs rounded-lg text-rose-400 hover:bg-rose-50 hover:border-rose-200" data-id="${task.id}" title="删除">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        const emptyTipHtml = isEmpty ? `
+            <div id="emptyPlanTip" class="empty-plan-tip mb-6">
+                <div class="icon-circle" style="width:40px;height:40px;font-size:1.05rem;background:#e3e9ff;color:#6b7ac9;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="text-sm font-semibold text-slate-700">今天还没定计划，说说今天要做什么？</div>
+                    <div class="text-xs text-slate-400 mt-1">点击让 AI 帮你拆解成具体任务</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300"></i>
+            </div>
+        ` : '';
+
+        return `
+            <div class="fade-in">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="flex gap-1">
+                        <button class="nav-link active" data-page="today"><i class="fa-solid fa-list-check mr-1"></i>今日任务</button>
+                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1"></i>任务管理</button>
+                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1"></i>聊天</button>
+                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1"></i>设置</button>
+                    </div>
+                    ${renderUserButtonHtml()}
+                </div>
+
+                ${emptyTipHtml}
+
+                <div class="flex flex-wrap items-end justify-between mb-6 gap-4">
+                    <div>
+                        <div class="text-2xl font-bold text-slate-800">${todayStr}</div>
+                        <div class="text-sm mt-2 text-slate-500 flex items-center gap-2">
+                            <span>今日完成度</span>
+                            <span class="font-mono font-bold" style="color: #6b7ac9;">${completed}/${total}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold" style="background: #e8edff; color: #5a6ab0;">${percent}%</span>
+                        </div>
+                        <div class="w-48 h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
+                            <div class="h-full rounded-full" style="width:${percent}%; background: linear-gradient(90deg, #b8c5fd, #d9c7f0);"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="addTodayTaskBtn" class="border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium rounded-xl text-slate-700 hover:bg-slate-50">
+                            <i class="fa-solid fa-plus mr-1"></i>添加今日任务
+                        </button>
+                        <button id="aiArrangeBtn" class="btn-primary px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI 帮我排
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3 pb-3 border-b border-slate-100">
+                        <i class="fa-solid fa-clipboard-list text-indigo-400"></i> 任务列表
+                    </div>
+                    ${tasksHtml || '<div class="text-sm text-slate-400 py-8 text-center"><i class="fa-regular fa-face-smile mr-2"></i>暂无任务</div>'}
+                </div>
+            </div>
+        `;
+    }
+
+    // ---------- 任务管理页 ----------
+    function renderManage() {
+        let longHtml = '';
+        longTasks.forEach(task => {
+            const days = task.repeat.map(d => ['一','二','三','四','五','六','日'][d-1]).join('/');
+            longHtml += `
+                <div class="long-task-item">
+                    <div class="flex-1 min-w-[150px]">
+                        <div class="font-semibold text-slate-800 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${task.enabled ? 'bg-emerald-300' : 'bg-slate-300'}"></span>
+                            ${task.title}
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1 ml-4">
+                            <i class="fa-regular fa-clock mr-1"></i>${task.duration} · 重复：周${days}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-1.5 text-sm text-slate-600 cursor-pointer">
+                            <input type="checkbox" class="toggle-enable" data-id="${task.id}" ${task.enabled ? 'checked' : ''}> 启用
+                        </label>
+                        <button class="edit-long-btn border border-slate-200 px-3 py-1.5 text-xs rounded-lg hover:bg-slate-50" data-id="${task.id}">
+                            <i class="fa-regular fa-pen-to-square"></i>
+                        </button>
+                        <button class="delete-long-btn border border-slate-200 px-3 py-1.5 text-xs rounded-lg text-rose-400 hover:bg-rose-50 hover:border-rose-200" data-id="${task.id}">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        return `
+            <div class="fade-in">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="flex gap-1">
+                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1"></i>今日任务</button>
+                        <button class="nav-link active" data-page="manage"><i class="fa-solid fa-layer-group mr-1"></i>任务管理</button>
+                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1"></i>聊天</button>
+                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1"></i>设置</button>
+                    </div>
+                    ${renderUserButtonHtml()}
+                </div>
+
+                <div class="flex justify-between items-center mb-5">
+                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-repeat text-indigo-300 mr-2"></i>长期任务</h2>
+                    <button id="newLongTaskBtn" class="btn-primary px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                        <i class="fa-solid fa-plus mr-1"></i> 新增长期任务
+                    </button>
+                </div>
+
+                <div class="card">
+                    ${longHtml || '<div class="text-sm text-slate-400 py-8 text-center">暂无长期任务</div>'}
+                </div>
+            </div>
+        `;
+    }
+
+    // ---------- 聊天页 ----------
+    function renderChat() {
+        let msgHtml = '';
+        chatMessages.forEach(msg => {
+            const isUser = msg.role === 'user';
+            msgHtml += `
+                <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                    <div class="message-bubble ${isUser ? 'message-user' : 'message-ai'}">
+                        <div class="text-xs mb-1 ${isUser ? 'text-white/70' : 'text-slate-400'} font-medium">
+                            ${isUser ? '<i class="fa-regular fa-user mr-1"></i>我' : '<i class="fa-solid fa-robot mr-1"></i>AI 助手'}
+                        </div>
+                        <div class="text-sm leading-relaxed">${msg.text}</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        return `
+            <div class="fade-in">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="flex gap-1">
+                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1"></i>今日任务</button>
+                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1"></i>任务管理</button>
+                        <button class="nav-link active" data-page="chat"><i class="fa-regular fa-comment-dots mr-1"></i>聊天</button>
+                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1"></i>设置</button>
+                    </div>
+                    ${renderUserButtonHtml()}
+                </div>
+
+                <div class="flex flex-col h-[520px] card p-0 overflow-hidden">
+                    <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+                        <div class="icon-circle" style="width:36px;height:36px;font-size:0.9rem; background: #e2e8ff; color: #6b7ac9;">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-sm text-slate-800">AI 学习助手</div>
+                            <div class="text-xs text-emerald-400 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span> 在线
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-5">
+                        ${msgHtml}
+                    </div>
+                    <div class="flex gap-3 p-4 border-t border-slate-100 bg-white">
+                        <input type="text" id="chatInput" placeholder="输入消息，例如：每周一三五 8:00-9:40 高等数学" class="flex-1">
+                        <button id="sendChatBtn" class="btn-primary px-6 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ---------- 设置页 ----------
+    function renderSettings() {
+        let tabContent = '';
+
+        if (currentTab === '课程表') {
+            const parsedCourses = parseTimetable();
+
+            let minStartMin = 8 * 60;
+            let maxEndMin = 22 * 60;
+            parsedCourses.forEach(c => {
+                if (c.startMin < minStartMin) minStartMin = c.startMin;
+                if (c.endMin > maxEndMin) maxEndMin = c.endMin;
+            });
+            const startHour = Math.floor(minStartMin / 60);
+            const endHour = Math.ceil(maxEndMin / 60);
+            const totalMinutes = (endHour - startHour) * 60;
+            const hourHeight = 60;
+            const gridHeight = (totalMinutes / 60) * hourHeight;
+
+            const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+
+            let headerHtml = '';
+            weekdays.forEach(day => {
+                headerHtml += `<div class="timetable-header-day">${day}</div>`;
+            });
+
+            let timeLabelsHtml = '';
+            for (let h = startHour; h < endHour; h++) {
+                timeLabelsHtml += `<div class="timetable-time-label">${String(h).padStart(2, '0')}:00</div>`;
+            }
+
+            let courseBlocksHtml = '';
+            parsedCourses.forEach(c => {
+                const color = getCourseColor(c.title);
+                const top = (c.startMin - startHour * 60) + 'px';
+                const height = c.durationMin + 'px';
+                const left = `calc(${c.dayIndex} * 14.285% + 2px)`;
+                const width = `calc(14.285% - 4px)`;
+
+                courseBlocksHtml += `
+                    <div class="course-block" style="
+                        top: ${top};
+                        height: ${height};
+                        left: ${left};
+                        width: ${width};
+                        background: ${color.bg};
+                        border: 1px solid ${color.border};
+                        color: ${color.text};
+                    ">
+                        <button class="course-delete-btn delete-course-btn" 
+                                data-day="${c.day}" 
+                                data-course="${c.title} ${c.startTime}-${c.endTime}"
+                                title="删除课程">×</button>
+                        <div class="course-block-inner">${c.title}</div>
+                    </div>
+                `;
+            });
+
+            const aiTip = `<div class="text-xs p-3 rounded-xl mb-4 flex items-center gap-2" style="background: #eef2ff; color: #6b7ac9; border: 1px solid #dfe6ff;">
+                <i class="fa-solid fa-lightbulb"></i> 您可以直接告诉 AI 助手帮您添加或修改课表
+            </div>`;
+
+            tabContent = `
+                <div class="mt-4">
+                    ${aiTip}
+                    <div class="timetable-grid-container mb-4">
+                        <div class="timetable-header">
+                            <div style="width: 60px; flex-shrink: 0;"></div>
+                            <div style="display: flex; flex: 1;">
+                                ${headerHtml}
+                            </div>
+                        </div>
+                        <div class="timetable-body" style="height: ${gridHeight}px;">
+                            <div class="timetable-time-col">
+                                ${timeLabelsHtml}
+                            </div>
+                            <div class="timetable-grid-bg">
+                                ${courseBlocksHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="addCourseBtn" class="btn-primary px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                            <i class="fa-solid fa-plus mr-1"></i> 新增课程
+                        </button>
+                        <button id="aiAddCourseBtn" class="btn-magic px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI 帮我加
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (currentTab === '休息时间') {
+            let breakList = breaks.map(b => `
+                <div class="flex justify-between items-center border-b border-slate-100 py-3 last:border-0">
+                    <span class="text-sm text-slate-700 flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-amber-300"></i>${b.start} - ${b.end}
+                    </span>
+                    <div class="flex gap-1">
+                        <button class="edit-break-btn border border-slate-200 px-2.5 py-1 text-xs rounded-lg hover:bg-slate-50" data-id="${b.id}">
+                            <i class="fa-regular fa-pen-to-square"></i>
+                        </button>
+                        <button class="delete-break-btn border border-slate-200 px-2.5 py-1 text-xs rounded-lg text-rose-400 hover:bg-rose-50 hover:border-rose-200" data-id="${b.id}">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            if (!breakList) breakList = '<div class="text-sm text-slate-400 py-6 text-center">暂无休息时段</div>';
+
+            tabContent = `
+                <div class="mt-4">
+                    <div class="card mb-4">${breakList}</div>
+                    <button id="addBreakBtn" class="btn-primary px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                        <i class="fa-solid fa-plus mr-1"></i> 新增休息时段
+                    </button>
+                </div>
+            `;
+        } else if (currentTab === '统计') {
+            const totalTasks = todayTasks.length;
+            const completedTasks = todayTasks.filter(t => t.status === '已完成').length;
+            const todayPercent = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            const weekCompleted = 12;
+            const weekTotal = 20;
+            const weekPercent = Math.round((weekCompleted / weekTotal) * 100);
+
+            const maxVal = Math.max(...weeklyStats, 1);
+            const barsHtml = weeklyStats.map((val, idx) => {
+                const heightPercent = (val / maxVal) * 100;
+                return `
+                    <div class="bar-item">
+                        <div class="bar-fill" style="height: ${heightPercent}%;"></div>
+                        <div class="bar-label">周${dayNames[idx]}</div>
+                        <div class="text-xs text-slate-400 font-medium">${val}</div>
+                    </div>
+                `;
+            }).join('');
+
+            tabContent = `
+                <div class="mt-4 space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="card flex items-center gap-4">
+                            <div class="icon-circle sun"><i class="fa-solid fa-sun"></i></div>
+                            <div>
+                                <div class="text-sm text-slate-500">今日完成度</div>
+                                <div class="text-2xl font-bold text-slate-800">${completedTasks}<span class="text-base text-slate-400 font-normal">/${totalTasks}</span></div>
+                                <div class="text-xs font-semibold mt-0.5" style="color: #6b7ac9;">${todayPercent}%</div>
+                            </div>
+                        </div>
+                        <div class="card flex items-center gap-4">
+                            <div class="icon-circle calendar"><i class="fa-solid fa-calendar-week"></i></div>
+                            <div>
+                                <div class="text-sm text-slate-500">本周完成度</div>
+                                <div class="text-2xl font-bold text-slate-800">${weekCompleted}<span class="text-base text-slate-400 font-normal">/${weekTotal}</span></div>
+                                <div class="text-xs font-semibold mt-0.5" style="color: #c28b3a;">${weekPercent}%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-indigo-300"></i> 近 7 天完成数
+                        </div>
+                        <div class="bar-chart">
+                            ${barsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const tabs = ['课程表', '休息时间', '统计'];
+        const tabButtons = tabs.map(t =>
+            `<button class="tab-item ${currentTab === t ? 'active' : ''}" data-tab="${t}">${t}</button>`
+        ).join('');
+
+        return `
+            <div class="fade-in">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
+                    <div class="flex gap-1">
+                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1"></i>今日任务</button>
+                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1"></i>任务管理</button>
+                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1"></i>聊天</button>
+                        <button class="nav-link active" data-page="settings"><i class="fa-solid fa-gear mr-1"></i>设置</button>
+                    </div>
+                    ${renderUserButtonHtml()}
+                </div>
+
+                <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-gear text-indigo-300 mr-2"></i>设置</h2>
+
+                <div class="flex flex-wrap gap-1 mb-5 border-b border-slate-100 pb-2">
+                    ${tabButtons}
+                </div>
+
+                <div>${tabContent}</div>
+            </div>
+        `;
+    }
+
+    // ==================== 课程解析 ====================
+    function parseCourseFromText(text) {
+        if (!text) return null;
+        const weekdayMap = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 7, '天': 7 };
+        const weekdayMatches = text.match(/周[一二三四五六日天]/g) || [];
+        let weekdays = [];
+        weekdayMatches.forEach(m => {
+            const ch = m[1];
+            if (weekdayMap[ch]) weekdays.push(weekdayMap[ch]);
+        });
+        const rangeMatch = text.match(/周([一二三四五六日天]+)/);
+        if (rangeMatch) {
+            const chars = rangeMatch[1];
+            const newDays = [];
+            for (let ch of chars) {
+                if (weekdayMap[ch]) newDays.push(weekdayMap[ch]);
+            }
+            if (newDays.length > 0) weekdays = newDays;
+        }
+        weekdays = [...new Set(weekdays)];
+        if (weekdays.length === 0) return null;
+
+        let start = null, end = null;
+        const timeRange1 = text.match(/(\d{1,2}):(\d{2})\s*[-到至~]\s*(\d{1,2}):(\d{2})/);
+        if (timeRange1) {
+            start = timeRange1[1].padStart(2, '0') + ':' + timeRange1[2];
+            end = timeRange1[3].padStart(2, '0') + ':' + timeRange1[4];
+        } else {
+            const timeRange2 = text.match(/(\d{1,2})点\s*[-到至]?\s*(\d{1,2})?点?(\d{1,2})?分?/);
+            if (timeRange2) {
+                start = timeRange2[1].padStart(2, '0') + ':00';
+                if (timeRange2[2]) {
+                    end = timeRange2[2].padStart(2, '0') + ':00';
+                    if (timeRange2[3]) {
+                        end = timeRange2[2].padStart(2, '0') + ':' + timeRange2[3].padStart(2, '0');
+                    }
+                }
+            }
+        }
+        if (start && !end) {
+            const [h, m] = start.split(':').map(Number);
+            const endHour = h + 1;
+            end = String(endHour).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        }
+
+        let courseName = text
+            .replace(/每周?[一二三四五六日天]+/g, '')
+            .replace(/\d{1,2}:\d{2}/g, '')
+            .replace(/\d{1,2}点(\d{1,2}分?)?/g, '')
+            .replace(/[-到至~]/g, ' ')
+            .trim();
+        if (!courseName) courseName = '未命名课程';
+
+        return {
+            weekdays,
+            start: start || '08:00',
+            end: end || '09:40',
+            title: courseName
+        };
+    }
+
+    function addParsedCourseToTimetable(parsed) {
+        const { weekdays, start, end, title } = parsed;
+        const weekNames = ['一', '二', '三', '四', '五', '六', '日'];
+        let addedDays = [];
+        weekdays.forEach(d => {
+            const dayKey = '周' + weekNames[d - 1];
+            if (!timetable[dayKey]) timetable[dayKey] = [];
+            const courseStr = `${title} ${start}-${end}`;
+            if (!timetable[dayKey].includes(courseStr)) {
+                timetable[dayKey].push(courseStr);
+                addedDays.push(dayKey);
+            }
+        });
+        return addedDays;
+    }
+
+    // ==================== 全局：菜单外部点击（只绑定一次） ====================
+    let globalMenuListenerAdded = false;
+    function setupGlobalMenuListener() {
+        if (globalMenuListenerAdded) return;
+        globalMenuListenerAdded = true;
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('userMenuDropdown');
+            if (!dropdown || dropdown.classList.contains('hidden')) return;
+            if (!e.target.closest('#userMenuContainer')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    }
+
+    // ==================== 全局事件绑定 ====================
+    function bindGlobalEvents() {
+        setupGlobalMenuListener();
+
+        document.querySelectorAll('[data-page]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = el.getAttribute('data-page');
+                if (page) {
+                    currentPage = page;
+                    if (page === 'settings' && currentTab === '课程表') {
+                        selectedWeekday = getTodayWeekdayCN();
+                    }
+                    render();
+                }
+            });
+        });
+
+        // ----- 用户头像与菜单 -----
+        const userAvatarBtn = document.getElementById('userAvatarBtn');
+        const userMenuDropdown = document.getElementById('userMenuDropdown');
+        if (userAvatarBtn && userMenuDropdown) {
+            userAvatarBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userMenuDropdown.classList.toggle('hidden');
+            });
+            userMenuDropdown.querySelectorAll('.user-menu-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const menu = item.getAttribute('data-menu');
+                    userMenuDropdown.classList.add('hidden');
+                    if (menu === 'edit') showEditProfileDialog();
+                    else if (menu === 'bind') showBindDialog();
+                    else if (menu === 'notify') showNotifyDialog();
+                    else if (menu === 'feedback') showFeedbackDialog();
+                    else if (menu === 'logout') {
+                        // 只回登录页，保留用户资料
+                        currentPage = 'login';
+                        render();
+                    }
+                });
+            });
+        }
+
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                currentPage = 'today';
+                render();
+            });
+        }
+
+        const goRegister = document.getElementById('goRegister');
+        if (goRegister) {
+            goRegister.addEventListener('click', () => {
+                alert('注册功能（演示版，点击登录即可进入）');
+            });
+        }
+
+        const emptyPlanTip = document.getElementById('emptyPlanTip');
+        if (emptyPlanTip) {
+            emptyPlanTip.addEventListener('click', () => showAiArrangeDialog());
+        }
+
+        document.querySelectorAll('.complete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'), 10);
+                const task = todayTasks.find(t => t.id === id);
+                if (task) task.status = '已完成';
+                render();
+            });
+        });
+
+        document.querySelectorAll('.edit-today-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'), 10);
+                const task = todayTasks.find(t => t.id === id);
+                if (task) showAddTodayTaskDialog(task);
+            });
+        });
+
+        document.querySelectorAll('.delete-today-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'), 10);
+                const idx = todayTasks.findIndex(t => t.id === id);
+                if (idx !== -1) { todayTasks.splice(idx, 1); render(); }
+            });
+        });
+
+        const addTodayBtn = document.getElementById('addTodayTaskBtn');
+        if (addTodayBtn) addTodayBtn.addEventListener('click', () => showAddTodayTaskDialog(null));
+
+        const aiBtn = document.getElementById('aiArrangeBtn');
+        if (aiBtn) aiBtn.addEventListener('click', () => showAiArrangeDialog());
+
+        const newLongBtn = document.getElementById('newLongTaskBtn');
+        if (newLongBtn) {
+            newLongBtn.addEventListener('click', () => {
+                editingLongTask = null;
+                showLongTaskDialog();
+            });
+        }
+
+        document.querySelectorAll('.edit-long-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'), 10);
+                const task = longTasks.find(t => t.id === id);
+                if (task) {
+                    editingLongTask = { ...task, repeat: [...task.repeat] };
+                    showLongTaskDialog();
+                }
+            });
+        });
+
+        document.querySelectorAll('.delete-long-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'), 10);
+                const idx = longTasks.findIndex(t => t.id === id);
+                if (idx !== -1) longTasks.splice(idx, 1);
+                render();
+            });
+        });
+
+        document.querySelectorAll('.toggle-enable').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const id = parseInt(e.target.getAttribute('data-id'), 10);
+                const task = longTasks.find(t => t.id === id);
+                if (task) task.enabled = e.target.checked;
+            });
+        });
+
+        const sendBtn = document.getElementById('sendChatBtn');
+        if (sendBtn) {
+            sendBtn.addEventListener('click', () => {
+                const input = document.getElementById('chatInput');
+                const text = input.value.trim();
+                if (!text) return;
+
+                chatMessages.push({ role: 'user', text });
+
+                const parsed = parseCourseFromText(text);
+                if (parsed) {
+                    const addedDays = addParsedCourseToTimetable(parsed);
+                    if (addedDays.length > 0) {
+                        const weekNames = ['一', '二', '三', '四', '五', '六', '日'];
+                        const dayStr = parsed.weekdays.map(d => '周' + weekNames[d-1]).join('、');
+                        chatMessages.push({
+                            role: 'ai',
+                            text: `已为你添加课程：${parsed.title} ${parsed.start}-${parsed.end}（${dayStr}）`
+                        });
+                    } else {
+                        chatMessages.push({ role: 'ai', text: '该课程已存在，未重复添加。' });
+                    }
+                } else if (text.includes('背单词') || text.includes('任务')) {
+                    todayTasks.push({
+                        id: Date.now(),
+                        title: '背单词 30 分钟',
+                        time: '时间待定',
+                        status: '未完成'
+                    });
+                    chatMessages.push({ role: 'ai', text: '已为你添加任务：背单词 30 分钟，点击上方「今日任务」查看。' });
+                } else {
+                    chatMessages.push({ role: 'ai', text: '收到，我会继续监督你。你可以说“每周一三五 8:00-9:40 高等数学”来导入课程。' });
+                }
+
+                input.value = '';
+                render();
+            });
+        }
+
+        document.querySelectorAll('.tab-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tab = e.target.closest('button').getAttribute('data-tab');
+                if (tab) {
+                    currentTab = tab;
+                    if (tab === '课程表') selectedWeekday = getTodayWeekdayCN();
+                    render();
+                }
+            });
+        });
+
+        document.querySelectorAll('.weekday-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const day = e.target.closest('button').getAttribute('data-day');
+                if (day) { selectedWeekday = day; render(); }
+            });
+        });
+
+        const addCourseBtn = document.getElementById('addCourseBtn');
+        if (addCourseBtn) addCourseBtn.addEventListener('click', () => showAddCourseDialog());
+
+        const aiAddCourseBtn = document.getElementById('aiAddCourseBtn');
+        if (aiAddCourseBtn) aiAddCourseBtn.addEventListener('click', () => showAiAddCourseDialog());
+
+        document.querySelectorAll('.delete-course-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const day = e.target.closest('button').getAttribute('data-day');
+                const courseStr = e.target.closest('button').getAttribute('data-course');
+                if (timetable[day]) {
+                    const idx = timetable[day].indexOf(courseStr);
+                    if (idx !== -1) { timetable[day].splice(idx, 1); render(); }
+                }
+            });
+        });
+
+        const addBreakBtn = document.getElementById('addBreakBtn');
+        if (addBreakBtn) {
+            addBreakBtn.addEventListener('click', () => {
+                breaks.push({ id: Date.now(), start: '12:00', end: '13:00' });
+                render();
+            });
+        }
+
+        document.querySelectorAll('.edit-break-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'), 10);
+                const b = breaks.find(item => item.id === id);
+                if (b) {
+                    b.start = prompt('修改开始时间', b.start) || b.start;
+                    b.end = prompt('修改结束时间', b.end) || b.end;
+                    render();
+                }
+            });
+        });
+
+        document.querySelectorAll('.delete-break-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.closest('button').getAttribute('data-id'), 10);
+                breaks = breaks.filter(item => item.id !== id);
+                render();
+            });
+        });
+    }
+
+    // ==================== 用户菜单：编辑资料 ====================
+    function showEditProfileDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+
+        const currentIsEmoji = !userProfile.avatar.startsWith('data:');
+        const defaultAvatarsHtml = DEFAULT_AVATARS.map(emoji => {
+            const active = currentIsEmoji && userProfile.avatar === emoji;
+            return `
+                <button class="avatar-option" data-avatar="${emoji}" style="
+                    width: 48px; height: 48px;
+                    border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 1.5rem;
+                    background: #f8fafc;
+                    border: 2px solid ${active ? '#a5b4fc' : '#e2e8f0'};
+                    cursor: pointer;
+                ">${emoji}</button>
+            `;
+        }).join('');
+
+        overlay.innerHTML = `
+            <div class="dialog-box" style="width: 520px;">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-regular fa-user text-indigo-300"></i> 编辑资料
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">更换头像</label>
+                        <div id="avatarPreview" style="width:72px;height:72px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:12px;border:2px solid #e2e8f0;overflow:hidden;">
+                            ${renderAvatarInner()}
+                        </div>
+                        <div id="avatarOptions" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                            ${defaultAvatarsHtml}
+                        </div>
+                        <input type="file" id="avatarUpload" accept="image/*" style="display:none;">
+                        <button id="avatarUploadBtn" type="button" class="border border-slate-200 px-3 py-1.5 text-xs rounded-lg hover:bg-slate-50" style="display:inline-flex;align-items:center;gap:6px;">
+                            <i class="fa-solid fa-upload"></i> 选择本地图片
+                        </button>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">昵称</label>
+                        <input id="profileNickname" type="text" value="${userProfile.nickname || ''}" maxlength="20" placeholder="请输入昵称">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">用户名</label>
+                        <input id="profileUsername" type="text" value="${userProfile.username || ''}" maxlength="30" placeholder="请输入用户名">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-7">
+                    <button id="profileCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                    <button id="profileSaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        let selectedAvatar = userProfile.avatar;
+
+        overlay.querySelectorAll('.avatar-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedAvatar = btn.getAttribute('data-avatar');
+                document.getElementById('avatarPreview').innerHTML = `<span style="font-size:2rem;line-height:1;">${selectedAvatar}</span>`;
+                overlay.querySelectorAll('.avatar-option').forEach(b => {
+                    const isActive = b.getAttribute('data-avatar') === selectedAvatar;
+                    b.style.borderColor = isActive ? '#a5b4fc' : '#e2e8f0';
+                });
+            });
+        });
+
+        const fileInput = document.getElementById('avatarUpload');
+        document.getElementById('avatarUploadBtn').addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                selectedAvatar = ev.target.result;
+                document.getElementById('avatarPreview').innerHTML = `<img src="${selectedAvatar}" style="width:100%;height:100%;object-fit:cover;">`;
+                overlay.querySelectorAll('.avatar-option').forEach(b => { b.style.borderColor = '#e2e8f0'; });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('profileCancelBtn').addEventListener('click', () => overlay.remove());
+        document.getElementById('profileSaveBtn').addEventListener('click', () => {
+            userProfile.avatar = selectedAvatar;
+            userProfile.nickname = document.getElementById('profileNickname').value.trim() || '学习同学';
+            userProfile.username = document.getElementById('profileUsername').value.trim() || 'student';
+            saveUserProfile();
+            overlay.remove();
+            render();
+        });
+
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ==================== 用户菜单：绑定手机号/邮箱 ====================
+    function showBindDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.innerHTML = `
+            <div class="dialog-box">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-mobile-screen text-indigo-300"></i> 绑定手机号/邮箱
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">手机号</label>
+                        <input id="bindPhone" type="text" placeholder="请输入手机号" value="${userProfile.phone || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">邮箱</label>
+                        <input id="bindEmail" type="text" placeholder="请输入邮箱" value="${userProfile.email || ''}">
+                    </div>
+                    <div class="text-xs text-slate-400 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-7">
+                    <button id="bindCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                    <button id="bindSaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('bindCancelBtn').addEventListener('click', () => overlay.remove());
+        document.getElementById('bindSaveBtn').addEventListener('click', () => {
+            userProfile.phone = document.getElementById('bindPhone').value.trim();
+            userProfile.email = document.getElementById('bindEmail').value.trim();
+            saveUserProfile();
+            overlay.remove();
+            alert('已保存到本机');
+        });
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ==================== 用户菜单：通知设置 ====================
+    function showNotifyDialog() {
+        const n = userProfile.notifications || {};
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.innerHTML = `
+            <div class="dialog-box">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-regular fa-bell text-indigo-300"></i> 通知设置
+                </h3>
+                <div class="space-y-3">
+                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid #eef2f8;border-radius:12px;">
+                        <span class="text-sm text-slate-700">任务提醒</span>
+                        <input type="checkbox" id="notifyTask" ${n.taskReminder ? 'checked' : ''}>
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid #eef2f8;border-radius:12px;">
+                        <span class="text-sm text-slate-700">课程提醒</span>
+                        <input type="checkbox" id="notifyCourse" ${n.courseReminder ? 'checked' : ''}>
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid #eef2f8;border-radius:12px;">
+                        <span class="text-sm text-slate-700">每日学习报告</span>
+                        <input type="checkbox" id="notifyDaily" ${n.dailyReport ? 'checked' : ''}>
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid #eef2f8;border-radius:12px;">
+                        <span class="text-sm text-slate-700">提示音</span>
+                        <input type="checkbox" id="notifySound" ${n.sound ? 'checked' : ''}>
+                    </label>
+                </div>
+                <div class="flex justify-end gap-3 mt-7">
+                    <button id="notifyCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                    <button id="notifySaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('notifyCancelBtn').addEventListener('click', () => overlay.remove());
+        document.getElementById('notifySaveBtn').addEventListener('click', () => {
+            userProfile.notifications = {
+                taskReminder: document.getElementById('notifyTask').checked,
+                courseReminder: document.getElementById('notifyCourse').checked,
+                dailyReport: document.getElementById('notifyDaily').checked,
+                sound: document.getElementById('notifySound').checked
+            };
+            saveUserProfile();
+            overlay.remove();
+        });
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ==================== 用户菜单：意见反馈 ====================
+    function showFeedbackDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.innerHTML = `
+            <div class="dialog-box">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-regular fa-comment-dots text-indigo-300"></i> 意见反馈
+                </h3>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">您的意见或建议</label>
+                    <textarea id="feedbackInput" rows="5" placeholder="请描述您遇到的问题或想要的功能……"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 mt-7">
+                    <button id="feedbackCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                    <button id="feedbackSubmitBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">提交</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('feedbackCancelBtn').addEventListener('click', () => overlay.remove());
+        document.getElementById('feedbackSubmitBtn').addEventListener('click', () => {
+            const content = document.getElementById('feedbackInput').value.trim();
+            if (!content) { alert('请输入反馈内容'); return; }
+            if (!Array.isArray(userProfile.feedbacks)) userProfile.feedbacks = [];
+            userProfile.feedbacks.push({ content, time: new Date().toISOString() });
+            saveUserProfile();
+            overlay.remove();
+            alert('感谢您的反馈！');
+        });
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ==================== 新增课程对话框 ====================
+    function showAddCourseDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.id = 'addCourseDialog';
+
+        const allDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+        const dayCheckboxes = allDays.map(d => `
+            <label class="inline-flex items-center text-sm text-slate-600 cursor-pointer mr-3 mb-1">
+                <input type="checkbox" class="course-weekday-checkbox mr-1.5" value="${d}"> ${d}
+            </label>
+        `).join('');
+
+        const hourOptsStart = buildHourOptions('08');
+        const minOptsStart = buildMinuteOptions('00');
+        const hourOptsEnd = buildHourOptions('09');
+        const minOptsEnd = buildMinuteOptions('40');
+
+        overlay.innerHTML = `
+            <div class="dialog-box">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-indigo-300"></i> 新增课程
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">课程名</label>
+                        <input id="courseNameInput" type="text" placeholder="例如：高等数学">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">周几（可多选）</label>
+                        <div class="flex flex-wrap">${dayCheckboxes}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">开始时间</label>
+                            <div class="flex items-center gap-1.5">
+                                <select id="courseStartHour" class="time-select" style="flex:1;">${hourOptsStart}</select>
+                                <span class="text-slate-400 font-semibold">:</span>
+                                <select id="courseStartMin" class="time-select" style="flex:1;">${minOptsStart}</select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">结束时间</label>
+                            <div class="flex items-center gap-1.5">
+                                <select id="courseEndHour" class="time-select" style="flex:1;">${hourOptsEnd}</select>
+                                <span class="text-slate-400 font-semibold">:</span>
+                                <select id="courseEndMin" class="time-select" style="flex:1;">${minOptsEnd}</select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-7">
+                    <button id="courseCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                    <button id="courseSaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('courseCancelBtn').addEventListener('click', () => overlay.remove());
+        document.getElementById('courseSaveBtn').addEventListener('click', () => {
+            const name = document.getElementById('courseNameInput').value.trim();
+            const selectedDays = Array.from(document.querySelectorAll('.course-weekday-checkbox:checked')).map(cb => cb.value);
+            const startHour = document.getElementById('courseStartHour').value;
+            const startMin = document.getElementById('courseStartMin').value;
+            const endHour = document.getElementById('courseEndHour').value;
+            const endMin = document.getElementById('courseEndMin').value;
+            const start = `${startHour}:${startMin}`;
+            const end = `${endHour}:${endMin}`;
+
+            if (!name) { alert('请填写课程名'); return; }
+            if (selectedDays.length === 0) { alert('请至少选择一个星期'); return; }
+            if (start >= end) { alert('结束时间需要晚于开始时间'); return; }
+
+            const courseStr = `${name} ${start}-${end}`;
+            selectedDays.forEach(day => {
+                if (!timetable[day]) timetable[day] = [];
+                if (!timetable[day].includes(courseStr)) timetable[day].push(courseStr);
+            });
+            overlay.remove();
+            render();
+        });
+
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ==================== 添加/编辑今日任务对话框 ====================
+    function showAddTodayTaskDialog(editTask = null) {
+        const isEdit = editTask !== null;
+        const task = editTask || { title: '', time: '' };
+
+        let startHH = '08', startMM = '00', endHH = '09', endMM = '00';
+        const parsed = parseTimeRange(task.time);
+        if (parsed) {
+            [startHH, startMM] = parsed.start.split(':');
+            [endHH, endMM] = parsed.end.split(':');
+        }
+
+        const hourOptsStart = buildHourOptions(startHH);
+        const minOptsStart = buildMinuteOptions(startMM);
+        const hourOptsEnd = buildHourOptions(endHH);
+        const minOptsEnd = buildMinuteOptions(endMM);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.id = 'addTodayDialog';
+        overlay.innerHTML = `
+            <div class="dialog-box">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid ${isEdit ? 'fa-pen-to-square' : 'fa-plus-circle'} text-indigo-300"></i>
+                    ${isEdit ? '编辑今日任务' : '添加今日任务'}
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">任务标题</label>
+                        <input id="todayTaskTitle" type="text" placeholder="例如：做数学卷子" value="${task.title || ''}">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">开始时间</label>
+                            <div class="flex items-center gap-1.5">
+                                <select id="todayStartHour" class="time-select" style="flex:1;">${hourOptsStart}</select>
+                                <span class="text-slate-400 font-semibold">:</span>
+                                <select id="todayStartMin" class="time-select" style="flex:1;">${minOptsStart}</select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">结束时间</label>
+                            <div class="flex items-center gap-1.5">
+                                <select id="todayEndHour" class="time-select" style="flex:1;">${hourOptsEnd}</select>
+                                <span class="text-slate-400 font-semibold">:</span>
+                                <select id="todayEndMin" class="time-select" style="flex:1;">${minOptsEnd}</select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-7">
+                    <button id="addTodayCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                    <button id="addTodaySaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                        ${isEdit ? '保存' : '添加'}
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('addTodayCancelBtn').addEventListener('click', () => overlay.remove());
+        document.getElementById('addTodaySaveBtn').addEventListener('click', () => {
+            const title = document.getElementById('todayTaskTitle').value.trim();
+            const startHour = document.getElementById('todayStartHour').value;
+            const startMin = document.getElementById('todayStartMin').value;
+            const endHour = document.getElementById('todayEndHour').value;
+            const endMin = document.getElementById('todayEndMin').value;
+            const start = `${startHour}:${startMin}`;
+            const end = `${endHour}:${endMin}`;
+
+            if (!title) { alert('请填写任务标题'); return; }
+            if (start >= end) { alert('结束时间需要晚于开始时间'); return; }
+
+            const time = `${start}-${end}`;
+            if (isEdit) {
+                const idx = todayTasks.findIndex(t => t.id === task.id);
+                if (idx !== -1) {
+                    todayTasks[idx] = { ...todayTasks[idx], title, time };
+                }
+            } else {
+                todayTasks.push({
+                    id: Date.now(),
+                    title, time, status: '未完成'
+                });
+            }
+            overlay.remove();
+            render();
+        });
+
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ==================== AI 帮我排 对话框 ====================
+    function showAiArrangeDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.id = 'aiArrangeDialog';
+        overlay.innerHTML = `
+            <div class="dialog-box">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-300"></i> AI 帮我排
+                </h3>
+
+                <div id="aiStepInput">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">今天要做什么？</label>
+                            <input id="aiGoalInput" type="text" placeholder="例如：复习数学，准备英语考试">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 mt-7">
+                        <button id="aiCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                        <button id="aiSubmitBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                            <i class="fa-solid fa-paper-plane mr-1"></i>提交
+                        </button>
+                    </div>
+                </div>
+
+                <div id="aiStepResult" class="hidden">
+                    <div class="text-xs text-slate-500 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-robot text-indigo-300"></i>
+                        AI 已为你拆解出以下任务：
+                    </div>
+                    <div id="aiTaskPreview" class="space-y-2 mb-6"></div>
+                    <div class="flex justify-end gap-3">
+                        <button id="aiBackBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">返回</button>
+                        <button id="aiConfirmBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                            <i class="fa-solid fa-check mr-1"></i>确认添加
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        let suggestedTasks = [];
+
+        document.getElementById('aiCancelBtn').addEventListener('click', () => overlay.remove());
+        document.getElementById('aiBackBtn').addEventListener('click', () => {
+            document.getElementById('aiStepResult').classList.add('hidden');
+            document.getElementById('aiStepInput').classList.remove('hidden');
+        });
+        document.getElementById('aiSubmitBtn').addEventListener('click', () => {
+            const goal = document.getElementById('aiGoalInput').value.trim() || '今日学习';
+            suggestedTasks = [
+                { title: `${goal} · 知识梳理`, time: '09:00-10:00' },
+                { title: `${goal} · 专项练习`, time: '14:00-15:00' },
+                { title: `${goal} · 复习巩固`, time: '19:00-19:40' }
+            ];
+            const preview = document.getElementById('aiTaskPreview');
+            preview.innerHTML = suggestedTasks.map((t, i) => `
+                <div class="ai-task-preview">
+                    <div class="ai-task-index">${i + 1}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-slate-800 truncate">${t.title}</div>
+                        <div class="text-xs text-slate-400 mt-0.5">
+                            <i class="fa-regular fa-clock mr-1"></i>${t.time} · ${getDurationFromTime(t.time)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('aiStepInput').classList.add('hidden');
+            document.getElementById('aiStepResult').classList.remove('hidden');
+        });
+        document.getElementById('aiConfirmBtn').addEventListener('click', () => {
+            suggestedTasks.forEach(t => {
+                todayTasks.push({
+                    id: Date.now() + Math.floor(Math.random() * 100000),
+                    title: t.title, time: t.time, status: '未完成'
+                });
+            });
+            overlay.remove();
+            render();
+        });
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ==================== AI 帮我加课程 对话框 ====================
+    function showAiAddCourseDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.id = 'aiAddCourseDialog';
+        overlay.innerHTML = `
+            <div class="dialog-box">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-300"></i> AI 帮我加课程
+                </h3>
+
+                <div id="aiCourseStepInput">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">请告诉我您要添加的课程或完整的课程表</label>
+                        <textarea id="aiCourseInput" rows="4" placeholder="例如：&#10;每周一三五 8:00-9:40 高等数学&#10;每周二 14:00-15:40 程序设计"></textarea>
+                        <div class="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-info"></i> 支持多行输入，每行一条课程
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 mt-7">
+                        <button id="aiCourseCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                        <button id="aiCourseSubmitBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                            <i class="fa-solid fa-paper-plane mr-1"></i>提交
+                        </button>
+                    </div>
+                </div>
+
+                <div id="aiCourseStepResult" class="hidden"></div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const weekNames = ['一', '二', '三', '四', '五', '六', '日'];
+        const inputStep = document.getElementById('aiCourseStepInput');
+        const resultStep = document.getElementById('aiCourseStepResult');
+
+        document.getElementById('aiCourseCancelBtn').addEventListener('click', () => overlay.remove());
+        document.getElementById('aiCourseSubmitBtn').addEventListener('click', () => {
+            const raw = document.getElementById('aiCourseInput').value.trim();
+            if (!raw) { alert('请输入课程内容'); return; }
+            const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+            const added = [];
+            const failed = [];
+
+            lines.forEach(line => {
+                const parsed = parseCourseFromText(line);
+                if (parsed) {
+                    addParsedCourseToTimetable(parsed);
+                    added.push({
+                        title: parsed.title,
+                        start: parsed.start,
+                        end: parsed.end,
+                        dayStr: parsed.weekdays.map(d => '周' + weekNames[d - 1]).join('、')
+                    });
+                } else {
+                    failed.push(line);
+                }
+            });
+
+            if (added.length === 0) {
+                resultStep.innerHTML = `
+                    <div class="text-sm text-slate-600 mb-5 flex items-start gap-2 p-3.5 rounded-xl" style="background:#fff5f5; border:1px solid #ffe0e0;">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5"></i>
+                        <span>没能识别出课程，请按「每周X X:XX-X:XX 课程名」的格式重新输入，例如：每周一三五 8:00-9:40 高等数学。</span>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button id="aiCourseBackBtn2" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">返回修改</button>
+                    </div>
+                `;
+                inputStep.classList.add('hidden');
+                resultStep.classList.remove('hidden');
+                document.getElementById('aiCourseBackBtn2').addEventListener('click', () => {
+                    resultStep.classList.add('hidden');
+                    inputStep.classList.remove('hidden');
+                });
+                return;
+            }
+
+            resultStep.innerHTML = `
+                <div class="text-xs text-slate-500 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-robot text-indigo-300"></i>
+                    已为你添加 ${added.length} 门课程：
+                </div>
+                <div class="space-y-2 mb-4 max-h-64 overflow-y-auto pr-1">
+                    ${added.map(item => `
+                        <div class="ai-task-preview">
+                            <div class="ai-task-index"><i class="fa-solid fa-check text-emerald-500" style="font-size:0.65rem;"></i></div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-slate-800 truncate">${item.title}</div>
+                                <div class="text-xs text-slate-400 mt-0.5">
+                                    <i class="fa-regular fa-clock mr-1"></i>${item.start}-${item.end} · ${item.dayStr}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                ${failed.length ? `
+                    <div class="text-xs text-rose-500 mb-5 p-2.5 rounded-xl leading-relaxed" style="background:#fff5f5; border:1px solid #ffe0e0;">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                        以下内容未能识别：${failed.join('；')}
+                    </div>
+                ` : ''}
+                <div class="flex justify-end gap-3">
+                    <button id="aiCourseBackBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">继续添加</button>
+                    <button id="aiCourseDoneBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                        <i class="fa-solid fa-check mr-1"></i>完成
+                    </button>
+                </div>
+            `;
+            inputStep.classList.add('hidden');
+            resultStep.classList.remove('hidden');
+
+            document.getElementById('aiCourseBackBtn').addEventListener('click', () => {
+                resultStep.classList.add('hidden');
+                inputStep.classList.remove('hidden');
+                document.getElementById('aiCourseInput').value = '';
+            });
+            document.getElementById('aiCourseDoneBtn').addEventListener('click', () => {
+                overlay.remove();
+                render();
+            });
+        });
+
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    // ==================== 长期任务对话框 ====================
+    function showLongTaskDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.id = 'longTaskDialog';
+
+        const isEdit = editingLongTask !== null;
+        const task = editingLongTask || { title: '', duration: '', repeat: [], enabled: true };
+
+        const repeatDays = [
+            { value: 1, label: '周一' },
+            { value: 2, label: '周二' },
+            { value: 3, label: '周三' },
+            { value: 4, label: '周四' },
+            { value: 5, label: '周五' },
+            { value: 6, label: '周六' },
+            { value: 7, label: '周日' },
+        ];
+
+        const repeatCheckboxes = repeatDays.map(day => `
+            <label class="inline-flex items-center mr-3 text-sm text-slate-600 cursor-pointer">
+                <input type="checkbox" class="repeat-checkbox mr-1.5" value="${day.value}" ${task.repeat.includes(day.value) ? 'checked' : ''}> ${day.label}
+            </label>
+        `).join('');
+
+        overlay.innerHTML = `
+            <div class="dialog-box">
+                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-repeat text-indigo-300"></i> ${isEdit ? '编辑长期任务' : '新增长期任务'}
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">标题</label>
+                        <input id="dialogTitle" type="text" value="${task.title}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">时长（如 30分钟）</label>
+                        <input id="dialogDuration" type="text" value="${task.duration}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">重复日</label>
+                        <div class="flex flex-wrap gap-1">${repeatCheckboxes}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">优先级</label>
+                        <select id="dialogPriority">
+                            <option value="高">高</option>
+                            <option value="中" selected>中</option>
+                            <option value="低">低</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-7">
+                    <button id="dialogCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
+                    <button id="dialogSaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('dialogCancelBtn').addEventListener('click', () => {
+            overlay.remove();
+            editingLongTask = null;
+        });
+        document.getElementById('dialogSaveBtn').addEventListener('click', () => {
+            const title = document.getElementById('dialogTitle').value.trim();
+            const duration = document.getElementById('dialogDuration').value.trim();
+            const repeat = Array.from(document.querySelectorAll('.repeat-checkbox:checked')).map(cb => parseInt(cb.value, 10));
+
+            if (!title || !duration) { alert('请填写标题和时长'); return; }
+
+            if (editingLongTask) {
+                const idx = longTasks.findIndex(t => t.id === editingLongTask.id);
+                if (idx !== -1) longTasks[idx] = { ...longTasks[idx], title, duration, repeat };
+            } else {
+                longTasks.push({ id: Date.now(), title, duration, repeat, enabled: true });
+            }
+            overlay.remove();
+            editingLongTask = null;
+            render();
+        });
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                editingLongTask = null;
+            }
+        });
+    }
+
+    // ==================== 初始化 ====================
+    loadUserProfile();
+    render();
+</script>
+
+</body>
+</html>

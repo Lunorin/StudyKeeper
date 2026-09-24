@@ -1,0 +1,18 @@
+# 构建上下文只需要 pom.xml + src/，其余一律不进 Docker 上下文（尤其是 target/：几百 MB 且完全没用）
+target/
+.idea/
+.vscode/
+*.iml
+.git/
+.gitignore
+.mvn/
+mvnw
+mvnw.cmd
+docs/
+HELP.md
+*.log
+hs_err_pid*.log
+a1.json
+tok.txt
+Dockerfile
+.dockerignore

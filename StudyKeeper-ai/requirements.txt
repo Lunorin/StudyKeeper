@@ -1,0 +1,6 @@
+# StudyKeeper AI 服务依赖（7.1）
+# Web 框架 + .env 读取 + 调用 DeepSeek（OpenAI 兼容接口）
+fastapi==0.141.1
+uvicorn==0.53.0
+python-dotenv==1.2.3
+openai==3.15.0

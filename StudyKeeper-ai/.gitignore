@@ -1,0 +1,9 @@
+# Python 虚拟环境
+.venv/
+
+# 字节码缓存
+__pycache__/
+*.pyc
+
+# 环境变量（含 API Key，绝对不能提交）
+.env

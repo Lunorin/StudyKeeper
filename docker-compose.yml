@@ -1,0 +1,147 @@
+# ============================================================================
+# StudyKeeper 本地一键启动（Docker Compose）
+#
+#   docker compose up -d --build      # 起 4 个服务（首次会构建镜像 + 自动建表）
+#   docker compose ps                 # 看状态（带健康检查）
+#   docker compose logs -f backend    # 看后端日志
+#   docker compose down               # 停掉（数据还在 ./data/mysql，下次 up 还在）
+#   重置数据库：停掉后清空 ./data/mysql 里的内容，再 up（首次会重新执行 mysql/init 里的建表脚本）
+#
+# 访问：http://localhost/   （前端页面；/api/** 由 nginx 反代到 backend:8080）
+#
+# 四个服务（只有 nginx 对外，其余全在 compose 内网里，靠容器名互相访问）：
+#   mysql    MySQL 8.0，数据落在 ./data/mysql，首次启动自动执行 mysql/init/*.sql 建表
+#   backend  Java 后端，连库用 mysql:3306、调 AI 用 ai:8000（**不是 localhost**）
+#   ai       Python AI 服务（FastAPI），API Key 从 .env 注入
+#   nginx    唯一对外端口 80：静态文件 + /api 反代；镜像就是前端镜像（见 study-agent-frontend/Dockerfile）
+#
+# 环境变量两处来源：1) 本文件里的 ${...} 由同目录 .env 插值；2) 服务自己的 environment/env_file。
+# ============================================================================
+
+name: studykeeper
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # MySQL 8.0（与本地开发用的 8.0.34 同大版本，字符集也对齐 utf8mb4 / utf8mb4_0900_ai_ci）
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: studykeeper-mysql
+    restart: always
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请先 Copy-Item .env.example .env 并填好 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-study_agent}
+      TZ: Asia/Shanghai
+    volumes:
+      # 数据持久化到宿主目录（删掉这个目录 = 库回到初始状态）
+      # Windows 上绑定挂载 MySQL 数据目录性能一般；想快一点可改成命名卷：mysql-data:/var/lib/mysql
+      - ./data/mysql:/var/lib/mysql
+      # 只在数据目录为空时按文件名顺序执行一次：建表（结构 = 本机库的 mysqldump，只有表没有数据）
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # $$ 是给 compose 的转义，容器里看到的才是 $MYSQL_ROOT_PASSWORD
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Java 后端（构建上下文 ./StudyKeeper）
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./StudyKeeper
+    image: studykeeper-backend:local
+    container_name: studykeeper-backend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy      # 等 MySQL 真能连了再起，免得第一次启动连不上库直接退
+    environment:
+      # 主机名必须是 mysql（容器名）—— 容器里的 localhost 指的是它自己
+      # allowPublicKeyRetrieval/useSSL=false：MySQL 8 的 caching_sha2_password 在非加密连接下需要它
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-study_agent}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请先填好 .env 里的 MYSQL_ROOT_PASSWORD}
+      # 覆盖 application.yml 里的 ${JWT_SECRET:默认值}（至少 32 字节，否则启动失败）
+      JWT_SECRET: ${JWT_SECRET:?请先填好 .env 里的 JWT_SECRET（至少 32 字节）}
+      # 发验证码用；留空也能启动，只是发验证码接口会返回 400
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      # 跨服务通信：用容器名 ai，**不能写 localhost**
+      AI_SERVICE_BASE_URL: http://ai:8000
+      TZ: Asia/Shanghai
+    expose:
+      - "8080"                          # 只在内网暴露；想在本机直连后端调试，就打开下面两行
+    # ports:
+    #   - "8080:8080"
+    healthcheck:
+      # 项目没引 actuator（不为了健康检查加依赖），所以只做 TCP 层探活：
+      # nc 是 alpine 自带 busybox 的工具，能连上 8080 就算起来了
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    # 用户上传的图片：当前项目头像走 base64 存 DB，没有文件上传接口，所以这里先不挂载。
+    # 以后真加了上传功能，把下面两行打开即可（宿主目录 ./data/uploads 已经建好）：
+    # volumes:
+    #   - ./data/uploads:/app/uploads
+
+  # ---------------------------------------------------------------------------
+  # Python AI 服务（构建上下文 ./StudyKeeper-ai）
+  # ---------------------------------------------------------------------------
+  ai:
+    build:
+      context: ./StudyKeeper-ai
+    image: studykeeper-ai:local
+    container_name: studykeeper-ai
+    restart: always
+    # 直接读同一个 .env：DEEPSEEK_API_KEY 就是这样进容器的（app/config.py 只认这个变量名）
+    # 说明：env_file 会把 .env 里**所有**键都塞进这个容器；想更严可以改成
+    #   environment:
+    #     DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    env_file:
+      - .env
+    environment:
+      TZ: Asia/Shanghai
+    expose:
+      - "8000"
+    healthcheck:
+      # app/routers/health.py 提供了 GET /health；镜像里没装 curl，就用 Python 自己探
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # Nginx：唯一对外入口（80）。静态文件 + /api 反代都由它一个容器负责（少一层前端容器）。
+  # 镜像来自前端项目（里面已经有构建好的 dist），站点配置用仓库根的 nginx/nginx.conf 覆盖。
+  # ---------------------------------------------------------------------------
+  nginx:
+    build:
+      context: ./study-agent-frontend
+    image: studykeeper-frontend:local
+    container_name: studykeeper-nginx
+    restart: always
+    depends_on:
+      - backend
+      - ai
+    ports:
+      - "80:80"
+    volumes:
+      # 覆盖官方镜像自带的 default.conf；改完配置 `docker compose restart nginx` 就生效，不用重新构建
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      # busybox wget：能取到首页就算 ok
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
