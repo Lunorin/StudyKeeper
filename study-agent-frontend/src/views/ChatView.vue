@@ -312,10 +312,9 @@ function handleEnter(event) {
   display: flex;
   flex-direction: column;
   height: 520px;
-  background: #fff;
-  border: 1px solid #eef2f8;
-  border-radius: 20px;
-  box-shadow: 0 8px 20px -10px rgba(140, 160, 210, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -323,23 +322,26 @@ function handleEnter(event) {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
-  background: rgba(248, 250, 252, 0.5);
-  border-bottom: 1px solid #f0f4fa;
+  padding: 12px 20px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 
+/* AI 头像:原型是道奇蓝小方块 + 白图标(覆盖全局 .icon-circle 的中性样式) */
 .chat-avatar {
-  width: 36px;
-  height: 36px;
-  font-size: 0.9rem;
-  background: #e2e8ff;
-  color: #6b7ac9;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  background: var(--dodger-blue);
+  color: #ffffff;
 }
 
 .chat-title {
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #1e293b;
+  font-weight: 500;
+  color: var(--text);
 }
 
 .chat-online {
@@ -348,14 +350,14 @@ function handleEnter(event) {
   gap: 4px;
   margin-top: 2px;
   font-size: 0.75rem;
-  color: #34d399;
+  color: var(--success);
 }
 
 .chat-online-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #6ee7b7;
+  background: var(--success);
 }
 
 .chat-body {
@@ -393,16 +395,17 @@ function handleEnter(event) {
 .message-bubble {
   max-width: 100%;
   padding: 10px 14px;
-  border-radius: 16px;
-  line-height: 1.5;
-  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  line-height: 1.55;
+  background: var(--surface);
 }
 
 /* 时间戳:小字号浅灰,与气泡留 4px 间距 */
 .message-time {
   margin-top: 4px;
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* 用户消息:时间贴气泡左下方 */
@@ -422,7 +425,7 @@ function handleEnter(event) {
   height: 1em;
   margin-left: 2px;
   vertical-align: text-bottom;
-  background: #6b7ac9;
+  background: var(--accent);
   animation: cursor-blink 1s step-end infinite;
 }
 
@@ -441,30 +444,30 @@ function handleEnter(event) {
 .message-failed {
   margin-top: 4px;
   font-size: 0.7rem;
-  color: #f56c6c;
+  color: var(--danger);
 }
 
+/* 用户消息:浅蓝气泡 + 白字(原型 --user-bubble-bg) */
 .message-user {
-  background: #dce8ff;
-  color: #1e293b;
-  border-bottom-right-radius: 6px;
+  background: var(--user-bubble-bg);
+  border-color: var(--user-bubble-bg);
+  color: #ffffff;
 }
 
 .message-ai {
-  background: #fff;
-  border: 1px solid #e9eef4;
-  border-bottom-left-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 .message-role {
   margin-bottom: 2px;
   font-size: 12px;
   font-weight: 500;
-  color: #909399;
+  color: var(--text-muted);
 }
 
 .message-user .message-role {
-  color: #5e6f8d;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .message-text {
@@ -476,7 +479,7 @@ function handleEnter(event) {
 
 /* 「AI 正在思考...」轻微呼吸效果 */
 .thinking {
-  color: #909399;
+  color: var(--text-muted);
   animation: thinking-pulse 1.2s ease-in-out infinite;
 }
 
@@ -496,8 +499,8 @@ function handleEnter(event) {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px 20px;
-  border-top: 1px solid #f0f4fa;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
 }
 
 /* 输入框 + 发送按钮这一行(保持原来的横向布局与间距) */
@@ -514,22 +517,22 @@ function handleEnter(event) {
   gap: 8px;
 }
 
-/* 胶囊按钮:白底 + 浅紫边框 + 小字号,悬停浅紫底(色值取自 style.css 的紫色主题) */
+/* 胶囊按钮:白底 + 细描边 + 小字号,悬停强调色浅底(色值取自 style.css 的强调色) */
 .quick-btn {
   padding: 4px 12px;
   font-family: inherit;
   font-size: 12px;
-  color: #5a6ab0;
-  background: #fff;
-  border: 1px solid #d0d8f3;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 999px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.12s ease;
 }
 
 .quick-btn:hover {
-  background: #e8ebfd;
-  border-color: #a5b4e3;
+  background: var(--accent-soft);
+  border-color: #c7cdf0;
 }
 
 /* AI 思考中按钮置灰,鼠标悬停也不再变色 */
@@ -539,8 +542,8 @@ function handleEnter(event) {
 }
 
 .quick-btn:disabled:hover {
-  background: #fff;
-  border-color: #d0d8f3;
+  background: var(--surface);
+  border-color: var(--border);
 }
 
 .chat-input {

@@ -149,7 +149,7 @@ function handleSkip() {
     @update:model-value="handleVisibleChange"
   >
     <div class="onboarding-body">
-      <!-- 进度:4 个圆点,已走过的浅紫、当前步实心紫色 -->
+      <!-- 进度:4 个圆点,已走过的深灰、当前步实心强调色 -->
       <div class="onboarding-dots">
         <span
           v-for="(step, index) in STEPS"
@@ -189,20 +189,20 @@ function handleSkip() {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #e2e8f0;
-  transition: all 0.2s ease;
+  background: var(--border);
+  transition: all 0.12s ease;
 }
 
 .onboarding-dot.is-done {
-  background: #c0cbee;
+  background: var(--border-strong);
 }
 
 .onboarding-dot.is-active {
-  background: #6b7ac9;
-  box-shadow: 0 0 0 4px rgba(107, 122, 201, 0.15);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(94, 106, 210, 0.15);
 }
 
-/* 标题上方的小图标:沿用原型 .icon-circle.lg 的圆角尺寸 + 紫色渐变 */
+/* 标题上方的小图标:中性灰方块,和其他图标底衬同一套配色 */
 .onboarding-emoji {
   display: flex;
   align-items: center;
@@ -210,22 +210,22 @@ function handleSkip() {
   width: 64px;
   height: 64px;
   margin: 0 auto 16px;
-  border-radius: 20px;
+  border-radius: 8px;
   font-size: 1.6rem;
-  background: linear-gradient(135deg, #e8ebfd 0%, #f3e8ff 100%);
+  background: var(--hover);
 }
 
 .onboarding-title {
   margin: 0 0 8px;
   font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .onboarding-desc {
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.6;
-  color: #64748b;
+  color: var(--text-muted);
 }
 </style>

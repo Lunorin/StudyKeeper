@@ -3,148 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>学习监督 · 多彩浅色版</title>
+    <title>学习监督 · 道奇蓝按钮</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        :root {
+            --bg: #fafafa;
+            --surface: #ffffff;
+            --border: #e5e5e5;
+            --border-strong: #d4d4d4;
+            --text: #171717;
+            --text-secondary: #525252;
+            --text-muted: #a3a3a3;
+            --hover: #f5f5f5;
+            --accent: #5e6ad2;
+            --accent-hover: #4f5ac0;
+            --accent-soft: #eef0fb;
+            --danger: #dc2626;
+            --success: #16a34a;
+            /* 用户气泡蓝色 */
+            --user-bubble-bg: #0ea5e9;
+            /* 道奇蓝 */
+            --dodger-blue: #1E90FF;
+            --dodger-blue-hover: #1a7fd4;
+            --dodger-blue-active: #166bb3;
+        }
+
         * {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            background: linear-gradient(145deg, 
-                #fde9ed 0%,
-                #e2f0e8 25%,
-                #e3e6fa 55%,
-                #d9eff5 80%,
-                #f5e6f0 100%
-            );
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
             margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding: 24px;
             box-sizing: border-box;
         }
 
         .app-container {
             max-width: 960px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 28px;
-            box-shadow: 0 25px 50px -12px rgba(140, 160, 210, 0.2), 
-                        0 0 0 1px rgba(255, 255, 255, 0.8) inset;
-            padding: 28px 32px 32px 32px;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            padding: 24px 28px 28px 28px;
             box-sizing: border-box;
-            border: 1px solid rgba(255, 255, 255, 0.9);
         }
 
+        /* 通用按钮样式（非主要按钮保持中性，但我们会覆盖主要按钮） */
         button, .btn, .nav-link, .tab-item, [data-clickable] {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            color: #1e293b;
-            padding: 8px 16px;
-            font-size: 0.875rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 7px 14px;
+            font-size: 0.8125rem;
             font-weight: 500;
             cursor: pointer;
-            border-radius: 14px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-            transition: all 0.2s ease;
+            border-radius: 6px;
+            transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
             outline: none;
+            font-family: inherit;
         }
 
         button:hover, .btn:hover, .nav-link:hover, .tab-item:hover, [data-clickable]:hover {
-            background: #f8fafc;
-            border-color: #cbd5e1;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 16px -6px rgba(140, 160, 210, 0.15);
+            background: var(--hover);
+            border-color: var(--border-strong);
         }
 
         button:active, .btn:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            background: #ededed;
+        }
+
+        button:focus-visible, .btn:focus-visible, .nav-link:focus-visible,
+        .tab-item:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+            box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
         }
 
         .nav-link {
             background: transparent;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 12px;
             text-decoration: none;
-            color: #64748b;
-            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
             font-weight: 500;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             cursor: pointer;
-            border-radius: 12px;
-            box-shadow: none;
+            border-radius: 6px;
         }
 
         .nav-link:hover {
-            background: #f1f5f9;
-            color: #334155;
-            transform: none;
-            box-shadow: none;
+            background: var(--hover);
+            color: var(--text);
         }
 
         .nav-link.active {
-            background: #e8ebfd;
-            color: #4e5590;
+            background: var(--accent-soft);
+            color: var(--accent);
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(168, 179, 247, 0.4);
         }
 
         .nav-link.active:hover {
-            background: #dfe3fd;
-            color: #3e467a;
+            background: #e6e9f8;
+            color: var(--accent);
         }
 
+        /* ===== 道奇蓝按钮 ===== */
         .btn-primary {
-            background: linear-gradient(135deg, #d3d9fd 0%, #e8d6f7 100%);
-            border: none;
-            color: #494f85;
-            font-weight: 600;
-            box-shadow: 0 6px 14px rgba(190, 197, 255, 0.5);
+            background: var(--dodger-blue);
+            border: 1px solid var(--dodger-blue);
+            color: #ffffff;
+            font-weight: 500;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #c5cefd 0%, #ddc9f5 100%);
-            box-shadow: 0 8px 20px rgba(160, 170, 255, 0.6);
-            color: #3a4070;
-            transform: translateY(-2px);
+            background: var(--dodger-blue-hover);
+            border-color: var(--dodger-blue-hover);
         }
 
+        .btn-primary:active {
+            background: var(--dodger-blue-active);
+            border-color: var(--dodger-blue-active);
+        }
+
+        /* 带魔法图标的按钮也统一为道奇蓝，但保留白色文字 */
         .btn-magic {
-            background: linear-gradient(135deg, #e4dcfb 0%, #d6e8fb 100%);
-            border: none;
-            color: #545b95;
-            font-weight: 600;
-            box-shadow: 0 6px 14px rgba(200, 200, 255, 0.45);
+            background: var(--dodger-blue);
+            border: 1px solid var(--dodger-blue);
+            color: #ffffff;
+            font-weight: 500;
         }
-
         .btn-magic:hover {
-            background: linear-gradient(135deg, #d9d0f8 0%, #c7dffa 100%);
-            box-shadow: 0 8px 20px rgba(180, 185, 255, 0.55);
-            color: #454b80;
-            transform: translateY(-2px);
+            background: var(--dodger-blue-hover);
+            border-color: var(--dodger-blue-hover);
         }
 
+        /* 所有带 data-page 的按钮如果是主操作也继承 */
         .dialog-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(220, 230, 255, 0.5);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.32);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            animation: fadeIn 0.2s ease;
+            animation: fadeIn 0.15s ease;
         }
 
         @keyframes fadeIn {
@@ -153,19 +167,19 @@
         }
 
         .dialog-box {
-            background: #ffffff;
-            border-radius: 24px;
-            padding: 28px;
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 24px;
             width: 460px;
             max-width: 90vw;
-            box-shadow: 0 30px 50px -20px rgba(120, 140, 220, 0.3);
-            animation: slideUp 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            animation: slideUp 0.15s ease;
         }
 
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(16px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .bar-chart {
@@ -185,34 +199,36 @@
 
         .bar-fill {
             width: 100%;
-            background: linear-gradient(180deg, #b8c5fd 0%, #d9c7f0 100%);
+            background: #d4d4d4;
             height: 0;
-            border-radius: 8px 8px 4px 4px;
-            transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 10px rgba(165, 180, 252, 0.5);
+            border-radius: 3px 3px 0 0;
+            transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bar-item:hover .bar-fill {
+            background: var(--accent);
         }
 
         .bar-label {
             font-size: 0.75rem;
-            margin-top: 6px;
-            color: #64748b;
+            margin-top: 8px;
+            color: var(--text-muted);
             font-weight: 500;
         }
 
         .task-item, .long-task-item {
-            border-bottom: 1px solid #f1f5f9;
-            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            padding: 14px 4px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 8px;
-            border-radius: 14px;
-            transition: background 0.2s ease;
+            transition: background 0.12s ease;
         }
 
         .task-item:hover, .long-task-item:hover {
-            background: #fafbff;
+            background: #fafafa;
         }
 
         .task-item:last-child, .long-task-item:last-child {
@@ -220,61 +236,64 @@
         }
 
         .status-badge {
-            font-size: 0.7rem;
-            font-weight: 600;
-            border: none;
-            padding: 4px 12px;
-            background: #f1f5f9;
-            color: #475569;
+            font-size: 0.6875rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            padding: 3px 10px;
+            background: var(--surface);
+            color: var(--text-secondary);
             border-radius: 20px;
             display: inline-block;
         }
 
         .status-badge.done {
-            background: #d1fae5;
-            color: #0f766e;
+            background: #f0fdf4;
+            color: var(--success);
+            border-color: #bbf7d0;
         }
 
+        /* ===== 消息气泡 ===== */
         .message-bubble {
             max-width: 80%;
-            padding: 12px 18px;
-            border: none;
-            background: #f1f5f9;
-            margin-bottom: 12px;
-            border-radius: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-            line-height: 1.5;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            margin-bottom: 10px;
+            border-radius: 8px;
+            line-height: 1.55;
         }
 
         .message-user {
             margin-left: auto;
-            background: #dce8ff;
-            color: #1e293b;
-            border-bottom-right-radius: 6px;
+            background: var(--user-bubble-bg);
+            color: #ffffff;
+            border-color: var(--user-bubble-bg);
         }
 
         .message-user .text-xs {
-            color: #5e6f8d !important;
+            color: rgba(255, 255, 255, 0.8) !important;
         }
 
         .message-ai {
             margin-right: auto;
-            background: #ffffff;
-            border: 1px solid #e9eef4;
-            border-bottom-left-radius: 6px;
+            background: var(--surface);
         }
 
         input[type="text"], input[type="password"], select, textarea {
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 10px 16px;
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
-            background: #ffffff;
-            color: #1e293b;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.8125rem;
+            transition: border-color 0.12s ease, box-shadow 0.12s ease;
+            background: var(--surface);
+            color: var(--text);
             width: 100%;
             box-sizing: border-box;
             font-family: inherit;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: var(--text-muted);
         }
 
         textarea {
@@ -284,23 +303,22 @@
         }
 
         input[type="text"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
-            border-color: #b0b9f0;
-            box-shadow: 0 0 0 4px rgba(176, 185, 240, 0.15);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(94, 106, 210, 0.12);
             outline: none;
         }
 
         .card {
-            background: #ffffff;
-            border: 1px solid #eef2f8;
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 8px 20px -10px rgba(140, 160, 210, 0.08);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px 20px;
         }
 
         input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: #a5b4fc;
+            width: 15px;
+            height: 15px;
+            accent-color: var(--accent);
             cursor: pointer;
         }
 
@@ -309,140 +327,139 @@
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #8b9cf0 0%, #c9a9e8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text);
+            background: none;
+            -webkit-text-fill-color: var(--text);
         }
 
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d4dcec; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #b9c4d9; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
 
-        .fade-in { animation: fadeInUp 0.4s ease; }
+        .fade-in { animation: fadeInUp 0.25s ease; }
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .weekday-btn {
-            border: 1px solid #e2e8f0;
-            padding: 6px 16px;
-            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            padding: 5px 14px;
+            font-size: 0.75rem;
             font-weight: 500;
-            border-radius: 12px;
-            background: #ffffff;
-            color: #475569;
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.12s ease;
+        }
+
+        .weekday-btn:hover {
+            background: var(--hover);
         }
 
         .weekday-btn.active {
-            background: #e2e8fc;
-            color: #3b3f7a;
-            border-color: #cbd5ff;
-            box-shadow: 0 4px 12px rgba(160, 170, 255, 0.3);
+            background: var(--accent-soft);
+            color: var(--accent);
+            border-color: #c7cdf0;
             font-weight: 600;
         }
 
         .tab-item {
             border: none;
             background: transparent;
-            padding: 10px 22px;
-            font-size: 0.875rem;
+            padding: 8px 14px;
+            font-size: 0.8125rem;
             font-weight: 500;
-            color: #64748b;
-            border-radius: 14px;
+            color: var(--text-secondary);
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.12s ease;
         }
 
         .tab-item:hover {
-            background: #f1f5f9;
-            color: #334155;
-            transform: none;
-            box-shadow: none;
+            background: var(--hover);
+            color: var(--text);
         }
 
         .tab-item.active {
-            background: #e5e9fc;
-            color: #3e4278;
+            background: var(--accent-soft);
+            color: var(--accent);
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(168, 179, 247, 0.4);
         }
 
         .icon-circle {
             width: 40px;
             height: 40px;
-            border-radius: 14px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f0f4ff;
-            color: #6b7ac9;
-            font-size: 1.1rem;
+            background: #f5f5f5;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            border: 1px solid var(--border);
         }
 
-        .icon-circle.sun { background: #ffefe3; color: #d98c2e; }
-        .icon-circle.calendar { background: #e0f2fe; color: #3b82b6; }
-        .icon-circle.chart { background: #f3e8ff; color: #9b6bc7; }
+        .icon-circle.sun { background: #f5f5f5; color: var(--text-secondary); }
+        .icon-circle.calendar { background: #f5f5f5; color: var(--text-secondary); }
+        .icon-circle.chart { background: #f5f5f5; color: var(--text-secondary); }
 
-        .border-slate-100 { border-color: #f0f4fa; }
-        .text-indigo-600 { color: #6d7bcb; }
-        .text-amber-600 { color: #c28b3a; }
+        .border-slate-100 { border-color: var(--border); }
+        .text-indigo-600 { color: var(--accent); }
 
         .ai-task-preview {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 14px;
-            border-radius: 14px;
-            background: #f6f8ff;
-            border: 1px solid #e8edff;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
         }
+
         .ai-task-index {
-            width: 24px;
-            height: 24px;
-            border-radius: 8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 700;
-            background: #dde4ff;
-            color: #5a6ab0;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            background: #f5f5f5;
+            color: var(--text-secondary);
             flex-shrink: 0;
+            border: 1px solid var(--border);
         }
 
         .empty-plan-tip {
             display: flex;
             align-items: center;
             gap: 14px;
-            padding: 16px 20px;
-            border-radius: 20px;
+            padding: 14px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            background: linear-gradient(135deg, #eef2ff 0%, #f7ebff 55%, #eaf6ff 100%);
-            border: 1px solid #e2e8ff;
-            box-shadow: 0 6px 18px -8px rgba(160, 170, 255, 0.4);
-            transition: all 0.25s ease;
+            background: var(--surface);
+            border: 1px dashed var(--border-strong);
+            transition: all 0.15s ease;
         }
 
         .empty-plan-tip:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px -10px rgba(160, 170, 255, 0.6);
-            border-color: #d3ddff;
+            background: #fafafa;
+            border-color: var(--accent);
         }
 
         .time-select {
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3a3a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right 8px center;
             background-size: 14px;
-            padding: 10px 26px 10px 14px;
+            padding: 8px 26px 8px 12px;
             text-align: center;
             font-variant-numeric: tabular-nums;
             cursor: pointer;
@@ -452,9 +469,9 @@
         .timetable-grid-container {
             height: 600px;
             overflow-y: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
         }
 
         .timetable-header {
@@ -462,18 +479,18 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
         }
 
         .timetable-header-day {
             flex: 1;
             text-align: center;
-            padding: 12px 0;
-            font-size: 0.8rem;
+            padding: 10px 0;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: #64748b;
-            border-right: 1px solid #f1f5f9;
+            color: var(--text-secondary);
+            border-right: 1px solid var(--border);
         }
 
         .timetable-header-day:last-child { border-right: none; }
@@ -486,46 +503,45 @@
         .timetable-time-col {
             width: 60px;
             flex-shrink: 0;
-            border-right: 1px solid #e2e8f0;
-            background: #ffffff;
+            border-right: 1px solid var(--border);
+            background: var(--surface);
             position: relative;
             z-index: 2;
         }
 
         .timetable-time-label {
             height: 60px;
-            font-size: 0.7rem;
-            color: #94a3b8;
+            font-size: 0.6875rem;
+            color: var(--text-muted);
             text-align: center;
             display: flex;
             align-items: flex-start;
             justify-content: center;
-            padding-top: 4px;
+            padding-top: 6px;
             box-sizing: border-box;
+            font-variant-numeric: tabular-nums;
         }
 
         .timetable-grid-bg {
             flex: 1;
             position: relative;
-            background-image: repeating-linear-gradient(to bottom, transparent, transparent 59px, #f8fafc 59px, #f8fafc 60px);
+            background-image: repeating-linear-gradient(to bottom, transparent, transparent 59px, #f5f5f5 59px, #f5f5f5 60px);
         }
 
         .course-block {
             position: absolute;
-            border-radius: 8px;
+            border-radius: 4px;
             padding: 6px 4px;
             box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: filter 0.12s ease;
         }
 
         .course-block:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            filter: brightness(0.97);
             z-index: 5;
         }
 
@@ -533,8 +549,8 @@
             writing-mode: vertical-rl;
             text-orientation: upright;
             letter-spacing: 1px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: 0.6875rem;
+            font-weight: 500;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -550,9 +566,9 @@
             position: absolute;
             top: 2px;
             right: 2px;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 4px;
             width: 16px;
             height: 16px;
             font-size: 10px;
@@ -560,12 +576,11 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            color: #ef4444;
+            color: var(--danger);
             opacity: 0;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.12s ease;
             z-index: 10;
             padding: 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .course-block:hover .course-delete-btn { opacity: 1; }
@@ -576,41 +591,49 @@
             align-items: center;
             gap: 10px;
             width: 100%;
-            padding: 10px 12px;
-            font-size: 0.875rem;
-            color: #334155;
+            padding: 8px 10px;
+            font-size: 0.8125rem;
+            color: var(--text);
             background: transparent;
             border: none;
-            border-radius: 10px;
+            border-radius: 5px;
             cursor: pointer;
             text-align: left;
-            transition: background 0.15s ease;
-            box-shadow: none;
+            transition: background 0.1s ease;
             font-weight: 500;
             font-family: inherit;
             box-sizing: border-box;
         }
 
         .user-menu-item:hover {
-            background: #f1f5f9;
-            transform: none;
-            box-shadow: none;
-            border-color: transparent;
+            background: var(--hover);
         }
 
-        .user-menu-item.user-menu-danger { color: #e11d48; }
+        .user-menu-item.user-menu-danger { color: var(--danger); }
         .user-menu-item.user-menu-danger:hover { background: #fef2f2; }
 
         .avatar-option {
-            transition: all 0.15s ease;
+            transition: all 0.12s ease;
             font-family: inherit;
             padding: 0;
-            box-shadow: none;
         }
 
         .avatar-option:hover {
-            transform: scale(1.08);
-            background: #eef2ff;
+            border-color: var(--accent) !important;
+        }
+
+        /* 首字母头像 */
+        .avatar-initial {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--text);
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.02em;
         }
     </style>
 </head>
@@ -758,13 +781,13 @@
     }
 
     const COURSE_COLORS = [
-        { bg: '#FFFDE7', border: '#FFF9C4', text: '#F57F17' },
-        { bg: '#E3F2FD', border: '#BBDEFB', text: '#0D47A1' },
-        { bg: '#E8F5E9', border: '#C8E6C9', text: '#1B5E20' },
-        { bg: '#F3E5F5', border: '#E1BEE7', text: '#4A148C' },
-        { bg: '#FFEBEE', border: '#FFCDD2', text: '#B71C1C' },
-        { bg: '#E0F7FA', border: '#B2EBF2', text: '#006064' },
-        { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100' }
+        { bg: '#eef0fb', border: '#dde1f5', text: '#3f4a9e' },
+        { bg: '#e8ebfa', border: '#d5daf2', text: '#3a4590' },
+        { bg: '#e2e6f8', border: '#ccd3ef', text: '#354080' },
+        { bg: '#dde1f6', border: '#c5cdec', text: '#303a72' },
+        { bg: '#d8ddf4', border: '#bdc6e8', text: '#2b3465' },
+        { bg: '#eef2f8', border: '#dbe2ee', text: '#4a5570' },
+        { bg: '#e8eef6', border: '#d2dcea', text: '#42506a' }
     ];
 
     function getCourseColor(name) {
@@ -824,40 +847,45 @@
     let editingLongTask = null;
 
     // ==================== 用户 UI 片段 ====================
+    function getInitial() {
+        const name = (userProfile.nickname || '学').trim();
+        return name.charAt(0).toUpperCase();
+    }
+
     function renderAvatarInner() {
         const a = userProfile.avatar || '🎓';
         if (a.startsWith('data:')) {
-            return `<img src="${a}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            return `<img src="${a}" alt="avatar" style="width:100%;height:100%;object-fit:cover;">`;
         }
-        return `<span style="font-size:1.1rem;line-height:1;">${a}</span>`;
+        return `<span class="avatar-initial">${getInitial()}</span>`;
     }
 
     function renderUserButtonHtml() {
         return `
             <div class="relative" id="userMenuContainer">
-                <button id="userAvatarBtn" title="${userProfile.nickname}" class="border border-slate-200 bg-white rounded-full hover:shadow-md transition-all" style="width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                <button id="userAvatarBtn" title="${userProfile.nickname}" style="width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%;border:1px solid var(--border);">
                     ${renderAvatarInner()}
                 </button>
-                <div id="userMenuDropdown" class="hidden" style="position:absolute;top:48px;right:0;width:210px;background:#fff;border-radius:16px;box-shadow:0 10px 40px -10px rgba(120,140,220,0.35);border:1px solid #eef2f8;padding:8px;z-index:50;">
+                <div id="userMenuDropdown" class="hidden" style="position:absolute;top:42px;right:0;width:200px;background:#fff;border-radius:8px;box-shadow:0 8px 24px -8px rgba(0,0,0,0.15);border:1px solid var(--border);padding:5px;z-index:50;">
                     <button class="user-menu-item" data-menu="edit">
-                        <i class="fa-regular fa-user" style="width:18px;color:#6b7ac9;"></i>
+                        <i class="fa-regular fa-user" style="width:16px;color:var(--text-muted);"></i>
                         <span>编辑资料</span>
                     </button>
                     <button class="user-menu-item" data-menu="bind">
-                        <i class="fa-solid fa-mobile-screen" style="width:18px;color:#6b7ac9;"></i>
+                        <i class="fa-solid fa-mobile-screen" style="width:16px;color:var(--text-muted);"></i>
                         <span>绑定手机号/邮箱</span>
                     </button>
                     <button class="user-menu-item" data-menu="notify">
-                        <i class="fa-regular fa-bell" style="width:18px;color:#6b7ac9;"></i>
+                        <i class="fa-regular fa-bell" style="width:16px;color:var(--text-muted);"></i>
                         <span>通知设置</span>
                     </button>
                     <button class="user-menu-item" data-menu="feedback">
-                        <i class="fa-regular fa-comment-dots" style="width:18px;color:#6b7ac9;"></i>
+                        <i class="fa-regular fa-comment-dots" style="width:16px;color:var(--text-muted);"></i>
                         <span>意见反馈</span>
                     </button>
-                    <div style="height:1px;background:#f1f5f9;margin:6px 8px;"></div>
+                    <div style="height:1px;background:var(--border);margin:4px 6px;"></div>
                     <button class="user-menu-item user-menu-danger" data-menu="logout">
-                        <i class="fa-solid fa-arrow-right-from-bracket" style="width:18px;"></i>
+                        <i class="fa-solid fa-arrow-right-from-bracket" style="width:16px;"></i>
                         <span>退出登录</span>
                     </button>
                 </div>
@@ -885,31 +913,31 @@
     // ---------- 登录页 ----------
     function renderLogin() {
         return `
-            <div class="flex flex-col items-center justify-center py-12">
-                <div class="icon-circle mb-6" style="width:64px;height:64px;font-size:1.6rem;border-radius:20px; background: #e4e9ff; color: #6b7ac9;">
+            <div class="flex flex-col items-center justify-center py-16">
+                <div class="mb-6" style="width:44px;height:44px;border-radius:8px;background:var(--dodger-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">
                     <i class="fa-solid fa-graduation-cap"></i>
                 </div>
-                <h1 class="text-3xl font-extrabold mb-2 text-gradient">学习监督</h1>
-                <p class="text-slate-500 text-sm mb-8">开始高效学习的一天</p>
+                <h1 class="text-2xl font-semibold mb-2 text-slate-900">学习监督</h1>
+                <p class="text-sm mb-8" style="color:var(--text-muted);">开始高效学习的一天</p>
 
                 <div class="w-full max-w-sm space-y-5">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            <i class="fa-regular fa-envelope mr-1 text-slate-400"></i> 账号
+                        <label class="block text-sm font-medium mb-2" style="color:var(--text-secondary);">
+                            账号
                         </label>
                         <input type="text" placeholder="手机号 / 邮箱" value="student@example.com">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            <i class="fa-solid fa-lock mr-1 text-slate-400"></i> 密码
+                        <label class="block text-sm font-medium mb-2" style="color:var(--text-secondary);">
+                            密码
                         </label>
                         <input type="password" placeholder="密码" value="123456">
                     </div>
-                    <button id="loginBtn" class="w-full btn-primary py-3 text-sm font-semibold" style="border-radius:16px;">
-                        <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> 登录
+                    <button id="loginBtn" class="btn-primary w-full py-2.5 text-sm font-medium" style="border-radius:6px;">
+                        登录
                     </button>
-                    <p class="text-center text-sm text-slate-500 mt-4">
-                        还没有账号？<span id="goRegister" class="text-indigo-600 font-medium cursor-pointer hover:underline" style="color: #7b8bd6;">立即注册</span>
+                    <p class="text-center text-sm mt-4" style="color:var(--text-muted);">
+                        还没有账号？<span id="goRegister" class="font-medium cursor-pointer hover:underline" style="color:var(--accent);">立即注册</span>
                     </p>
                 </div>
             </div>
@@ -931,21 +959,21 @@
             tasksHtml += `
                 <div class="task-item">
                     <div class="flex-1 min-w-[160px]">
-                        <div class="font-semibold text-slate-800 flex items-center gap-2">
-                            ${isDone ? '<i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>' : '<i class="fa-regular fa-circle text-slate-300 text-sm"></i>'}
+                        <div class="font-medium text-sm flex items-center gap-2" style="color:var(--text);">
+                            ${isDone ? '<i class="fa-solid fa-circle-check text-sm" style="color:var(--success);"></i>' : '<i class="fa-regular fa-circle text-sm" style="color:var(--text-muted);"></i>'}
                             ${task.title}
                         </div>
-                        <div class="text-xs text-slate-400 mt-1 ml-5">
+                        <div class="text-xs mt-1 ml-5" style="color:var(--text-muted);">
                             <i class="fa-regular fa-clock mr-1"></i>${task.time} · ${duration}
                         </div>
                     </div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="status-badge ${isDone ? 'done' : ''}">${task.status}</span>
-                        ${!isDone ? `<button class="complete-btn btn-primary px-3 py-1.5 text-xs" data-id="${task.id}" style="border-radius:10px;">完成</button>` : ''}
-                        <button class="edit-today-btn border border-slate-200 px-2.5 py-1.5 text-xs rounded-lg hover:bg-slate-50" data-id="${task.id}" title="编辑">
+                        ${!isDone ? `<button class="complete-btn btn-primary px-3 py-1.5 text-xs" data-id="${task.id}" style="border-radius:6px;">完成</button>` : ''}
+                        <button class="edit-today-btn px-2.5 py-1.5 text-xs" data-id="${task.id}" title="编辑" style="border-radius:6px;">
                             <i class="fa-regular fa-pen-to-square"></i>
                         </button>
-                        <button class="delete-today-btn border border-slate-200 px-2.5 py-1.5 text-xs rounded-lg text-rose-400 hover:bg-rose-50 hover:border-rose-200" data-id="${task.id}" title="删除">
+                        <button class="delete-today-btn px-2.5 py-1.5 text-xs" data-id="${task.id}" title="删除" style="border-radius:6px;color:var(--danger);">
                             <i class="fa-regular fa-trash-can"></i>
                         </button>
                     </div>
@@ -955,25 +983,25 @@
 
         const emptyTipHtml = isEmpty ? `
             <div id="emptyPlanTip" class="empty-plan-tip mb-6">
-                <div class="icon-circle" style="width:40px;height:40px;font-size:1.05rem;background:#e3e9ff;color:#6b7ac9;">
+                <div style="width:32px;height:32px;border-radius:6px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:0.85rem;border:1px solid var(--border);">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                 </div>
                 <div class="flex-1">
-                    <div class="text-sm font-semibold text-slate-700">今天还没定计划，说说今天要做什么？</div>
-                    <div class="text-xs text-slate-400 mt-1">点击让 AI 帮你拆解成具体任务</div>
+                    <div class="text-sm font-medium" style="color:var(--text);">今天还没定计划，说说今天要做什么？</div>
+                    <div class="text-xs mt-1" style="color:var(--text-muted);">点击让 AI 帮你拆解成具体任务</div>
                 </div>
-                <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                <i class="fa-solid fa-chevron-right text-xs" style="color:var(--text-muted);"></i>
             </div>
         ` : '';
 
         return `
             <div class="fade-in">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-4 mb-6" style="border-color:var(--border);">
                     <div class="flex gap-1">
-                        <button class="nav-link active" data-page="today"><i class="fa-solid fa-list-check mr-1"></i>今日任务</button>
-                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1"></i>任务管理</button>
-                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1"></i>聊天</button>
-                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1"></i>设置</button>
+                        <button class="nav-link active" data-page="today"><i class="fa-solid fa-list-check mr-1.5"></i>今日任务</button>
+                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1.5"></i>任务管理</button>
+                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1.5"></i>聊天</button>
+                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1.5"></i>设置</button>
                     </div>
                     ${renderUserButtonHtml()}
                 </div>
@@ -982,31 +1010,31 @@
 
                 <div class="flex flex-wrap items-end justify-between mb-6 gap-4">
                     <div>
-                        <div class="text-2xl font-bold text-slate-800">${todayStr}</div>
-                        <div class="text-sm mt-2 text-slate-500 flex items-center gap-2">
+                        <div class="text-xl font-semibold" style="color:var(--text);">${todayStr}</div>
+                        <div class="text-sm mt-2 flex items-center gap-2" style="color:var(--text-secondary);">
                             <span>今日完成度</span>
-                            <span class="font-mono font-bold" style="color: #6b7ac9;">${completed}/${total}</span>
-                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold" style="background: #e8edff; color: #5a6ab0;">${percent}%</span>
+                            <span class="font-mono font-semibold" style="color:var(--text);">${completed}/${total}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background:var(--accent-soft); color:var(--accent);">${percent}%</span>
                         </div>
-                        <div class="w-48 h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
-                            <div class="h-full rounded-full" style="width:${percent}%; background: linear-gradient(90deg, #b8c5fd, #d9c7f0);"></div>
+                        <div class="w-48 h-1 bg-neutral-200 rounded-full mt-3 overflow-hidden">
+                            <div class="h-full rounded-full" style="width:${percent}%; background:var(--dodger-blue);"></div>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button id="addTodayTaskBtn" class="border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium rounded-xl text-slate-700 hover:bg-slate-50">
-                            <i class="fa-solid fa-plus mr-1"></i>添加今日任务
+                        <button id="addTodayTaskBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                            <i class="fa-solid fa-plus mr-1.5"></i>添加今日任务
                         </button>
-                        <button id="aiArrangeBtn" class="btn-primary px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI 帮我排
+                        <button id="aiArrangeBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>AI 帮我排
                         </button>
                     </div>
                 </div>
 
                 <div class="card">
-                    <div class="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3 pb-3 border-b border-slate-100">
-                        <i class="fa-solid fa-clipboard-list text-indigo-400"></i> 任务列表
+                    <div class="flex items-center gap-2 text-sm font-medium mb-3 pb-3 border-b" style="color:var(--text); border-color:var(--border);">
+                        <i class="fa-solid fa-clipboard-list" style="color:var(--text-muted);"></i> 任务列表
                     </div>
-                    ${tasksHtml || '<div class="text-sm text-slate-400 py-8 text-center"><i class="fa-regular fa-face-smile mr-2"></i>暂无任务</div>'}
+                    ${tasksHtml || '<div class="text-sm py-8 text-center" style="color:var(--text-muted);"><i class="fa-regular fa-face-smile mr-2"></i>暂无任务</div>'}
                 </div>
             </div>
         `;
@@ -1020,22 +1048,22 @@
             longHtml += `
                 <div class="long-task-item">
                     <div class="flex-1 min-w-[150px]">
-                        <div class="font-semibold text-slate-800 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full ${task.enabled ? 'bg-emerald-300' : 'bg-slate-300'}"></span>
+                        <div class="font-medium text-sm flex items-center gap-2" style="color:var(--text);">
+                            <span class="w-1.5 h-1.5 rounded-full" style="background:${task.enabled ? 'var(--dodger-blue)' : 'var(--text-muted)'};"></span>
                             ${task.title}
                         </div>
-                        <div class="text-xs text-slate-400 mt-1 ml-4">
+                        <div class="text-xs mt-1 ml-3.5" style="color:var(--text-muted);">
                             <i class="fa-regular fa-clock mr-1"></i>${task.duration} · 重复：周${days}
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <label class="flex items-center gap-1.5 text-sm text-slate-600 cursor-pointer">
+                        <label class="flex items-center gap-1.5 text-sm cursor-pointer" style="color:var(--text-secondary);">
                             <input type="checkbox" class="toggle-enable" data-id="${task.id}" ${task.enabled ? 'checked' : ''}> 启用
                         </label>
-                        <button class="edit-long-btn border border-slate-200 px-3 py-1.5 text-xs rounded-lg hover:bg-slate-50" data-id="${task.id}">
+                        <button class="edit-long-btn px-3 py-1.5 text-xs" data-id="${task.id}" style="border-radius:6px;">
                             <i class="fa-regular fa-pen-to-square"></i>
                         </button>
-                        <button class="delete-long-btn border border-slate-200 px-3 py-1.5 text-xs rounded-lg text-rose-400 hover:bg-rose-50 hover:border-rose-200" data-id="${task.id}">
+                        <button class="delete-long-btn px-3 py-1.5 text-xs" data-id="${task.id}" style="border-radius:6px;color:var(--danger);">
                             <i class="fa-regular fa-trash-can"></i>
                         </button>
                     </div>
@@ -1045,25 +1073,25 @@
 
         return `
             <div class="fade-in">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-4 mb-6" style="border-color:var(--border);">
                     <div class="flex gap-1">
-                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1"></i>今日任务</button>
-                        <button class="nav-link active" data-page="manage"><i class="fa-solid fa-layer-group mr-1"></i>任务管理</button>
-                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1"></i>聊天</button>
-                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1"></i>设置</button>
+                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1.5"></i>今日任务</button>
+                        <button class="nav-link active" data-page="manage"><i class="fa-solid fa-layer-group mr-1.5"></i>任务管理</button>
+                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1.5"></i>聊天</button>
+                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1.5"></i>设置</button>
                     </div>
                     ${renderUserButtonHtml()}
                 </div>
 
                 <div class="flex justify-between items-center mb-5">
-                    <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-repeat text-indigo-300 mr-2"></i>长期任务</h2>
-                    <button id="newLongTaskBtn" class="btn-primary px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                        <i class="fa-solid fa-plus mr-1"></i> 新增长期任务
+                    <h2 class="text-lg font-semibold" style="color:var(--text);"><i class="fa-solid fa-repeat mr-2" style="color:var(--text-muted);"></i>长期任务</h2>
+                    <button id="newLongTaskBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                        <i class="fa-solid fa-plus mr-1.5"></i> 新增长期任务
                     </button>
                 </div>
 
                 <div class="card">
-                    ${longHtml || '<div class="text-sm text-slate-400 py-8 text-center">暂无长期任务</div>'}
+                    ${longHtml || '<div class="text-sm py-8 text-center" style="color:var(--text-muted);">暂无长期任务</div>'}
                 </div>
             </div>
         `;
@@ -1077,8 +1105,8 @@
             msgHtml += `
                 <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
                     <div class="message-bubble ${isUser ? 'message-user' : 'message-ai'}">
-                        <div class="text-xs mb-1 ${isUser ? 'text-white/70' : 'text-slate-400'} font-medium">
-                            ${isUser ? '<i class="fa-regular fa-user mr-1"></i>我' : '<i class="fa-solid fa-robot mr-1"></i>AI 助手'}
+                        <div class="text-xs mb-1 font-medium" style="color:${isUser ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)'};">
+                            ${isUser ? '我' : 'AI 助手'}
                         </div>
                         <div class="text-sm leading-relaxed">${msg.text}</div>
                     </div>
@@ -1088,34 +1116,34 @@
 
         return `
             <div class="fade-in">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-4 mb-6" style="border-color:var(--border);">
                     <div class="flex gap-1">
-                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1"></i>今日任务</button>
-                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1"></i>任务管理</button>
-                        <button class="nav-link active" data-page="chat"><i class="fa-regular fa-comment-dots mr-1"></i>聊天</button>
-                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1"></i>设置</button>
+                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1.5"></i>今日任务</button>
+                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1.5"></i>任务管理</button>
+                        <button class="nav-link active" data-page="chat"><i class="fa-regular fa-comment-dots mr-1.5"></i>聊天</button>
+                        <button class="nav-link" data-page="settings"><i class="fa-solid fa-gear mr-1.5"></i>设置</button>
                     </div>
                     ${renderUserButtonHtml()}
                 </div>
 
                 <div class="flex flex-col h-[520px] card p-0 overflow-hidden">
-                    <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-                        <div class="icon-circle" style="width:36px;height:36px;font-size:0.9rem; background: #e2e8ff; color: #6b7ac9;">
+                    <div class="px-5 py-3 border-b flex items-center gap-3" style="border-color:var(--border); background:#fafafa;">
+                        <div style="width:32px;height:32px;border-radius:6px;background:var(--dodger-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.8rem;">
                             <i class="fa-solid fa-robot"></i>
                         </div>
                         <div>
-                            <div class="font-semibold text-sm text-slate-800">AI 学习助手</div>
-                            <div class="text-xs text-emerald-400 flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span> 在线
+                            <div class="font-medium text-sm" style="color:var(--text);">AI 学习助手</div>
+                            <div class="text-xs flex items-center gap-1" style="color:var(--success);">
+                                <span class="w-1.5 h-1.5 rounded-full" style="background:var(--success);"></span> 在线
                             </div>
                         </div>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-5">
+                    <div class="flex-1 overflow-y-auto p-5" style="background:#fafafa;">
                         ${msgHtml}
                     </div>
-                    <div class="flex gap-3 p-4 border-t border-slate-100 bg-white">
+                    <div class="flex gap-2 p-3 border-t" style="border-color:var(--border); background:#fff;">
                         <input type="text" id="chatInput" placeholder="输入消息，例如：每周一三五 8:00-9:40 高等数学" class="flex-1">
-                        <button id="sendChatBtn" class="btn-primary px-6 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                        <button id="sendChatBtn" class="btn-primary px-5 py-2 text-sm font-medium" style="border-radius:6px;">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
                     </div>
@@ -1182,8 +1210,8 @@
                 `;
             });
 
-            const aiTip = `<div class="text-xs p-3 rounded-xl mb-4 flex items-center gap-2" style="background: #eef2ff; color: #6b7ac9; border: 1px solid #dfe6ff;">
-                <i class="fa-solid fa-lightbulb"></i> 您可以直接告诉 AI 助手帮您添加或修改课表
+            const aiTip = `<div class="text-xs p-3 rounded-md mb-4 flex items-center gap-2" style="background:#fafafa; color:var(--text-secondary); border: 1px solid var(--border);">
+                <i class="fa-solid fa-lightbulb" style="color:var(--text-muted);"></i> 您可以直接告诉 AI 助手帮您添加或修改课表
             </div>`;
 
             tabContent = `
@@ -1206,38 +1234,38 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <button id="addCourseBtn" class="btn-primary px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                            <i class="fa-solid fa-plus mr-1"></i> 新增课程
+                        <button id="addCourseBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                            <i class="fa-solid fa-plus mr-1.5"></i> 新增课程
                         </button>
-                        <button id="aiAddCourseBtn" class="btn-magic px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI 帮我加
+                        <button id="aiAddCourseBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> AI 帮我加
                         </button>
                     </div>
                 </div>
             `;
         } else if (currentTab === '休息时间') {
             let breakList = breaks.map(b => `
-                <div class="flex justify-between items-center border-b border-slate-100 py-3 last:border-0">
-                    <span class="text-sm text-slate-700 flex items-center gap-2">
-                        <i class="fa-regular fa-clock text-amber-300"></i>${b.start} - ${b.end}
+                <div class="flex justify-between items-center border-b py-3 last:border-0" style="border-color:var(--border);">
+                    <span class="text-sm flex items-center gap-2" style="color:var(--text);">
+                        <i class="fa-regular fa-clock" style="color:var(--text-muted);"></i>${b.start} - ${b.end}
                     </span>
                     <div class="flex gap-1">
-                        <button class="edit-break-btn border border-slate-200 px-2.5 py-1 text-xs rounded-lg hover:bg-slate-50" data-id="${b.id}">
+                        <button class="edit-break-btn px-2.5 py-1 text-xs" data-id="${b.id}" style="border-radius:6px;">
                             <i class="fa-regular fa-pen-to-square"></i>
                         </button>
-                        <button class="delete-break-btn border border-slate-200 px-2.5 py-1 text-xs rounded-lg text-rose-400 hover:bg-rose-50 hover:border-rose-200" data-id="${b.id}">
+                        <button class="delete-break-btn px-2.5 py-1 text-xs" data-id="${b.id}" style="border-radius:6px;color:var(--danger);">
                             <i class="fa-regular fa-trash-can"></i>
                         </button>
                     </div>
                 </div>
             `).join('');
-            if (!breakList) breakList = '<div class="text-sm text-slate-400 py-6 text-center">暂无休息时段</div>';
+            if (!breakList) breakList = '<div class="text-sm py-6 text-center" style="color:var(--text-muted);">暂无休息时段</div>';
 
             tabContent = `
                 <div class="mt-4">
                     <div class="card mb-4">${breakList}</div>
-                    <button id="addBreakBtn" class="btn-primary px-4 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                        <i class="fa-solid fa-plus mr-1"></i> 新增休息时段
+                    <button id="addBreakBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                        <i class="fa-solid fa-plus mr-1.5"></i> 新增休息时段
                     </button>
                 </div>
             `;
@@ -1256,7 +1284,7 @@
                     <div class="bar-item">
                         <div class="bar-fill" style="height: ${heightPercent}%;"></div>
                         <div class="bar-label">周${dayNames[idx]}</div>
-                        <div class="text-xs text-slate-400 font-medium">${val}</div>
+                        <div class="text-xs font-medium" style="color:var(--text-muted);">${val}</div>
                     </div>
                 `;
             }).join('');
@@ -1265,26 +1293,26 @@
                 <div class="mt-4 space-y-5">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="card flex items-center gap-4">
-                            <div class="icon-circle sun"><i class="fa-solid fa-sun"></i></div>
+                            <div class="icon-circle"><i class="fa-solid fa-sun"></i></div>
                             <div>
-                                <div class="text-sm text-slate-500">今日完成度</div>
-                                <div class="text-2xl font-bold text-slate-800">${completedTasks}<span class="text-base text-slate-400 font-normal">/${totalTasks}</span></div>
-                                <div class="text-xs font-semibold mt-0.5" style="color: #6b7ac9;">${todayPercent}%</div>
+                                <div class="text-sm" style="color:var(--text-muted);">今日完成度</div>
+                                <div class="text-2xl font-semibold" style="color:var(--text);">${completedTasks}<span class="text-base font-normal" style="color:var(--text-muted);">/${totalTasks}</span></div>
+                                <div class="text-xs font-medium mt-0.5" style="color:var(--dodger-blue);">${todayPercent}%</div>
                             </div>
                         </div>
                         <div class="card flex items-center gap-4">
-                            <div class="icon-circle calendar"><i class="fa-solid fa-calendar-week"></i></div>
+                            <div class="icon-circle"><i class="fa-solid fa-calendar-week"></i></div>
                             <div>
-                                <div class="text-sm text-slate-500">本周完成度</div>
-                                <div class="text-2xl font-bold text-slate-800">${weekCompleted}<span class="text-base text-slate-400 font-normal">/${weekTotal}</span></div>
-                                <div class="text-xs font-semibold mt-0.5" style="color: #c28b3a;">${weekPercent}%</div>
+                                <div class="text-sm" style="color:var(--text-muted);">本周完成度</div>
+                                <div class="text-2xl font-semibold" style="color:var(--text);">${weekCompleted}<span class="text-base font-normal" style="color:var(--text-muted);">/${weekTotal}</span></div>
+                                <div class="text-xs font-medium mt-0.5" style="color:var(--dodger-blue);">${weekPercent}%</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <div class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-column text-indigo-300"></i> 近 7 天完成数
+                        <div class="text-sm font-medium mb-4 flex items-center gap-2" style="color:var(--text);">
+                            <i class="fa-solid fa-chart-column" style="color:var(--text-muted);"></i> 近 7 天完成数
                         </div>
                         <div class="bar-chart">
                             ${barsHtml}
@@ -1301,19 +1329,19 @@
 
         return `
             <div class="fade-in">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-4 mb-6" style="border-color:var(--border);">
                     <div class="flex gap-1">
-                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1"></i>今日任务</button>
-                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1"></i>任务管理</button>
-                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1"></i>聊天</button>
-                        <button class="nav-link active" data-page="settings"><i class="fa-solid fa-gear mr-1"></i>设置</button>
+                        <button class="nav-link" data-page="today"><i class="fa-solid fa-list-check mr-1.5"></i>今日任务</button>
+                        <button class="nav-link" data-page="manage"><i class="fa-solid fa-layer-group mr-1.5"></i>任务管理</button>
+                        <button class="nav-link" data-page="chat"><i class="fa-regular fa-comment-dots mr-1.5"></i>聊天</button>
+                        <button class="nav-link active" data-page="settings"><i class="fa-solid fa-gear mr-1.5"></i>设置</button>
                     </div>
                     ${renderUserButtonHtml()}
                 </div>
 
-                <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-gear text-indigo-300 mr-2"></i>设置</h2>
+                <h2 class="text-lg font-semibold mb-4" style="color:var(--text);"><i class="fa-solid fa-gear mr-2" style="color:var(--text-muted);"></i>设置</h2>
 
-                <div class="flex flex-wrap gap-1 mb-5 border-b border-slate-100 pb-2">
+                <div class="flex flex-wrap gap-1 mb-5 border-b pb-2" style="border-color:var(--border);">
                     ${tabButtons}
                 </div>
 
@@ -1431,7 +1459,6 @@
             });
         });
 
-        // ----- 用户头像与菜单 -----
         const userAvatarBtn = document.getElementById('userAvatarBtn');
         const userMenuDropdown = document.getElementById('userMenuDropdown');
         if (userAvatarBtn && userMenuDropdown) {
@@ -1449,7 +1476,6 @@
                     else if (menu === 'notify') showNotifyDialog();
                     else if (menu === 'feedback') showFeedbackDialog();
                     else if (menu === 'logout') {
-                        // 只回登录页，保留用户资料
                         currentPage = 'login';
                         render();
                     }
@@ -1658,12 +1684,12 @@
             const active = currentIsEmoji && userProfile.avatar === emoji;
             return `
                 <button class="avatar-option" data-avatar="${emoji}" style="
-                    width: 48px; height: 48px;
-                    border-radius: 50%;
+                    width: 42px; height: 42px;
+                    border-radius: 6px;
                     display: flex; align-items: center; justify-content: center;
-                    font-size: 1.5rem;
-                    background: #f8fafc;
-                    border: 2px solid ${active ? '#a5b4fc' : '#e2e8f0'};
+                    font-size: 1.25rem;
+                    background: #fafafa;
+                    border: 1.5px solid ${active ? 'var(--dodger-blue)' : 'var(--border)'};
                     cursor: pointer;
                 ">${emoji}</button>
             `;
@@ -1671,35 +1697,38 @@
 
         overlay.innerHTML = `
             <div class="dialog-box" style="width: 520px;">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-regular fa-user text-indigo-300"></i> 编辑资料
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-regular fa-user" style="color:var(--text-muted);"></i> 编辑资料
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">更换头像</label>
-                        <div id="avatarPreview" style="width:72px;height:72px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:12px;border:2px solid #e2e8f0;overflow:hidden;">
+                        <label class="block text-sm font-medium mb-2" style="color:var(--text-secondary);">更换头像</label>
+                        <div id="avatarPreview" style="width:64px;height:64px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin-bottom:12px;border:1px solid var(--border);overflow:hidden;">
                             ${renderAvatarInner()}
                         </div>
                         <div id="avatarOptions" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
                             ${defaultAvatarsHtml}
                         </div>
                         <input type="file" id="avatarUpload" accept="image/*" style="display:none;">
-                        <button id="avatarUploadBtn" type="button" class="border border-slate-200 px-3 py-1.5 text-xs rounded-lg hover:bg-slate-50" style="display:inline-flex;align-items:center;gap:6px;">
+                        <button id="avatarUploadBtn" type="button" class="px-3 py-1.5 text-xs font-medium" style="display:inline-flex;align-items:center;gap:6px;border-radius:6px;">
                             <i class="fa-solid fa-upload"></i> 选择本地图片
                         </button>
+                        <div class="text-xs mt-2" style="color:var(--text-muted);">
+                            提示：emoji 头像会以昵称首字母展示，更接近 Linear / GitHub 风格
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">昵称</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">昵称</label>
                         <input id="profileNickname" type="text" value="${userProfile.nickname || ''}" maxlength="20" placeholder="请输入昵称">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">用户名</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">用户名</label>
                         <input id="profileUsername" type="text" value="${userProfile.username || ''}" maxlength="30" placeholder="请输入用户名">
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-7">
-                    <button id="profileCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                    <button id="profileSaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                    <button id="profileCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                    <button id="profileSaveBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">保存</button>
                 </div>
             </div>
         `;
@@ -1710,10 +1739,10 @@
         overlay.querySelectorAll('.avatar-option').forEach(btn => {
             btn.addEventListener('click', () => {
                 selectedAvatar = btn.getAttribute('data-avatar');
-                document.getElementById('avatarPreview').innerHTML = `<span style="font-size:2rem;line-height:1;">${selectedAvatar}</span>`;
+                document.getElementById('avatarPreview').innerHTML = `<span style="font-size:1.75rem;line-height:1;">${selectedAvatar}</span>`;
                 overlay.querySelectorAll('.avatar-option').forEach(b => {
                     const isActive = b.getAttribute('data-avatar') === selectedAvatar;
-                    b.style.borderColor = isActive ? '#a5b4fc' : '#e2e8f0';
+                    b.style.borderColor = isActive ? 'var(--dodger-blue)' : 'var(--border)';
                 });
             });
         });
@@ -1727,7 +1756,7 @@
             reader.onload = (ev) => {
                 selectedAvatar = ev.target.result;
                 document.getElementById('avatarPreview').innerHTML = `<img src="${selectedAvatar}" style="width:100%;height:100%;object-fit:cover;">`;
-                overlay.querySelectorAll('.avatar-option').forEach(b => { b.style.borderColor = '#e2e8f0'; });
+                overlay.querySelectorAll('.avatar-option').forEach(b => { b.style.borderColor = 'var(--border)'; });
             };
             reader.readAsDataURL(file);
         });
@@ -1751,25 +1780,25 @@
         overlay.className = 'dialog-overlay';
         overlay.innerHTML = `
             <div class="dialog-box">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-mobile-screen text-indigo-300"></i> 绑定手机号/邮箱
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-solid fa-mobile-screen" style="color:var(--text-muted);"></i> 绑定手机号/邮箱
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">手机号</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">手机号</label>
                         <input id="bindPhone" type="text" placeholder="请输入手机号" value="${userProfile.phone || ''}">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">邮箱</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">邮箱</label>
                         <input id="bindEmail" type="text" placeholder="请输入邮箱" value="${userProfile.email || ''}">
                     </div>
-                    <div class="text-xs text-slate-400 flex items-center gap-1">
-                        <i class="fa-solid fa-circle-info"></i>
+                    <div class="text-xs flex items-center gap-1" style="color:var(--text-muted);">
+                        <i class="fa-solid fa-circle-info"></i> 演示版：信息仅保存在本机浏览器
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-7">
-                    <button id="bindCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                    <button id="bindSaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                    <button id="bindCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                    <button id="bindSaveBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">保存</button>
                 </div>
             </div>
         `;
@@ -1793,30 +1822,30 @@
         overlay.className = 'dialog-overlay';
         overlay.innerHTML = `
             <div class="dialog-box">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-regular fa-bell text-indigo-300"></i> 通知设置
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-regular fa-bell" style="color:var(--text-muted);"></i> 通知设置
                 </h3>
-                <div class="space-y-3">
-                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid #eef2f8;border-radius:12px;">
-                        <span class="text-sm text-slate-700">任务提醒</span>
+                <div class="space-y-2">
+                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid var(--border);border-radius:6px;">
+                        <span class="text-sm" style="color:var(--text);">任务提醒</span>
                         <input type="checkbox" id="notifyTask" ${n.taskReminder ? 'checked' : ''}>
                     </label>
-                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid #eef2f8;border-radius:12px;">
-                        <span class="text-sm text-slate-700">课程提醒</span>
+                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid var(--border);border-radius:6px;">
+                        <span class="text-sm" style="color:var(--text);">课程提醒</span>
                         <input type="checkbox" id="notifyCourse" ${n.courseReminder ? 'checked' : ''}>
                     </label>
-                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid #eef2f8;border-radius:12px;">
-                        <span class="text-sm text-slate-700">每日学习报告</span>
+                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid var(--border);border-radius:6px;">
+                        <span class="text-sm" style="color:var(--text);">每日学习报告</span>
                         <input type="checkbox" id="notifyDaily" ${n.dailyReport ? 'checked' : ''}>
                     </label>
-                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid #eef2f8;border-radius:12px;">
-                        <span class="text-sm text-slate-700">提示音</span>
+                    <label class="flex items-center justify-between cursor-pointer" style="padding:10px 12px;border:1px solid var(--border);border-radius:6px;">
+                        <span class="text-sm" style="color:var(--text);">提示音</span>
                         <input type="checkbox" id="notifySound" ${n.sound ? 'checked' : ''}>
                     </label>
                 </div>
                 <div class="flex justify-end gap-3 mt-7">
-                    <button id="notifyCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                    <button id="notifySaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                    <button id="notifyCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                    <button id="notifySaveBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">保存</button>
                 </div>
             </div>
         `;
@@ -1842,16 +1871,16 @@
         overlay.className = 'dialog-overlay';
         overlay.innerHTML = `
             <div class="dialog-box">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-regular fa-comment-dots text-indigo-300"></i> 意见反馈
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-regular fa-comment-dots" style="color:var(--text-muted);"></i> 意见反馈
                 </h3>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1.5">您的意见或建议</label>
+                    <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">您的意见或建议</label>
                     <textarea id="feedbackInput" rows="5" placeholder="请描述您遇到的问题或想要的功能……"></textarea>
                 </div>
                 <div class="flex justify-end gap-3 mt-7">
-                    <button id="feedbackCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                    <button id="feedbackSubmitBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">提交</button>
+                    <button id="feedbackCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                    <button id="feedbackSubmitBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">提交</button>
                 </div>
             </div>
         `;
@@ -1878,7 +1907,7 @@
 
         const allDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
         const dayCheckboxes = allDays.map(d => `
-            <label class="inline-flex items-center text-sm text-slate-600 cursor-pointer mr-3 mb-1">
+            <label class="inline-flex items-center text-sm cursor-pointer mr-3 mb-1" style="color:var(--text-secondary);">
                 <input type="checkbox" class="course-weekday-checkbox mr-1.5" value="${d}"> ${d}
             </label>
         `).join('');
@@ -1890,40 +1919,40 @@
 
         overlay.innerHTML = `
             <div class="dialog-box">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-plus-circle text-indigo-300"></i> 新增课程
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-solid fa-plus-circle" style="color:var(--text-muted);"></i> 新增课程
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">课程名</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">课程名</label>
                         <input id="courseNameInput" type="text" placeholder="例如：高等数学">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">周几（可多选）</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">周几（可多选）</label>
                         <div class="flex flex-wrap">${dayCheckboxes}</div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">开始时间</label>
+                            <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">开始时间</label>
                             <div class="flex items-center gap-1.5">
                                 <select id="courseStartHour" class="time-select" style="flex:1;">${hourOptsStart}</select>
-                                <span class="text-slate-400 font-semibold">:</span>
+                                <span style="color:var(--text-muted);">:</span>
                                 <select id="courseStartMin" class="time-select" style="flex:1;">${minOptsStart}</select>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">结束时间</label>
+                            <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">结束时间</label>
                             <div class="flex items-center gap-1.5">
                                 <select id="courseEndHour" class="time-select" style="flex:1;">${hourOptsEnd}</select>
-                                <span class="text-slate-400 font-semibold">:</span>
+                                <span style="color:var(--text-muted);">:</span>
                                 <select id="courseEndMin" class="time-select" style="flex:1;">${minOptsEnd}</select>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-7">
-                    <button id="courseCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                    <button id="courseSaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                    <button id="courseCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                    <button id="courseSaveBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">保存</button>
                 </div>
             </div>
         `;
@@ -1978,37 +2007,37 @@
         overlay.id = 'addTodayDialog';
         overlay.innerHTML = `
             <div class="dialog-box">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid ${isEdit ? 'fa-pen-to-square' : 'fa-plus-circle'} text-indigo-300"></i>
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-solid ${isEdit ? 'fa-pen-to-square' : 'fa-plus-circle'}" style="color:var(--text-muted);"></i>
                     ${isEdit ? '编辑今日任务' : '添加今日任务'}
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">任务标题</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">任务标题</label>
                         <input id="todayTaskTitle" type="text" placeholder="例如：做数学卷子" value="${task.title || ''}">
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">开始时间</label>
+                            <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">开始时间</label>
                             <div class="flex items-center gap-1.5">
                                 <select id="todayStartHour" class="time-select" style="flex:1;">${hourOptsStart}</select>
-                                <span class="text-slate-400 font-semibold">:</span>
+                                <span style="color:var(--text-muted);">:</span>
                                 <select id="todayStartMin" class="time-select" style="flex:1;">${minOptsStart}</select>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">结束时间</label>
+                            <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">结束时间</label>
                             <div class="flex items-center gap-1.5">
                                 <select id="todayEndHour" class="time-select" style="flex:1;">${hourOptsEnd}</select>
-                                <span class="text-slate-400 font-semibold">:</span>
+                                <span style="color:var(--text-muted);">:</span>
                                 <select id="todayEndMin" class="time-select" style="flex:1;">${minOptsEnd}</select>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-7">
-                    <button id="addTodayCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                    <button id="addTodaySaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
+                    <button id="addTodayCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                    <button id="addTodaySaveBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
                         ${isEdit ? '保存' : '添加'}
                     </button>
                 </div>
@@ -2055,35 +2084,35 @@
         overlay.id = 'aiArrangeDialog';
         overlay.innerHTML = `
             <div class="dialog-box">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-300"></i> AI 帮我排
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--text-muted);"></i> AI 帮我排
                 </h3>
 
                 <div id="aiStepInput">
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">今天要做什么？</label>
+                            <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">今天要做什么？</label>
                             <input id="aiGoalInput" type="text" placeholder="例如：复习数学，准备英语考试">
                         </div>
                     </div>
                     <div class="flex justify-end gap-3 mt-7">
-                        <button id="aiCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                        <button id="aiSubmitBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                            <i class="fa-solid fa-paper-plane mr-1"></i>提交
+                        <button id="aiCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                        <button id="aiSubmitBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                            <i class="fa-solid fa-paper-plane mr-1.5"></i>提交
                         </button>
                     </div>
                 </div>
 
                 <div id="aiStepResult" class="hidden">
-                    <div class="text-xs text-slate-500 mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-robot text-indigo-300"></i>
+                    <div class="text-xs mb-3 flex items-center gap-2" style="color:var(--text-muted);">
+                        <i class="fa-solid fa-robot"></i>
                         AI 已为你拆解出以下任务：
                     </div>
                     <div id="aiTaskPreview" class="space-y-2 mb-6"></div>
                     <div class="flex justify-end gap-3">
-                        <button id="aiBackBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">返回</button>
-                        <button id="aiConfirmBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                            <i class="fa-solid fa-check mr-1"></i>确认添加
+                        <button id="aiBackBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">返回</button>
+                        <button id="aiConfirmBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                            <i class="fa-solid fa-check mr-1.5"></i>确认添加
                         </button>
                     </div>
                 </div>
@@ -2110,8 +2139,8 @@
                 <div class="ai-task-preview">
                     <div class="ai-task-index">${i + 1}</div>
                     <div class="flex-1 min-w-0">
-                        <div class="text-sm font-medium text-slate-800 truncate">${t.title}</div>
-                        <div class="text-xs text-slate-400 mt-0.5">
+                        <div class="text-sm font-medium truncate" style="color:var(--text);">${t.title}</div>
+                        <div class="text-xs mt-0.5" style="color:var(--text-muted);">
                             <i class="fa-regular fa-clock mr-1"></i>${t.time} · ${getDurationFromTime(t.time)}
                         </div>
                     </div>
@@ -2140,22 +2169,22 @@
         overlay.id = 'aiAddCourseDialog';
         overlay.innerHTML = `
             <div class="dialog-box">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-300"></i> AI 帮我加课程
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--text-muted);"></i> AI 帮我加课程
                 </h3>
 
                 <div id="aiCourseStepInput">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">请告诉我您要添加的课程或完整的课程表</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">请告诉我您要添加的课程或完整的课程表</label>
                         <textarea id="aiCourseInput" rows="4" placeholder="例如：&#10;每周一三五 8:00-9:40 高等数学&#10;每周二 14:00-15:40 程序设计"></textarea>
-                        <div class="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                        <div class="text-xs mt-2 flex items-center gap-1" style="color:var(--text-muted);">
                             <i class="fa-solid fa-circle-info"></i> 支持多行输入，每行一条课程
                         </div>
                     </div>
                     <div class="flex justify-end gap-3 mt-7">
-                        <button id="aiCourseCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                        <button id="aiCourseSubmitBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                            <i class="fa-solid fa-paper-plane mr-1"></i>提交
+                        <button id="aiCourseCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                        <button id="aiCourseSubmitBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                            <i class="fa-solid fa-paper-plane mr-1.5"></i>提交
                         </button>
                     </div>
                 </div>
@@ -2194,12 +2223,12 @@
 
             if (added.length === 0) {
                 resultStep.innerHTML = `
-                    <div class="text-sm text-slate-600 mb-5 flex items-start gap-2 p-3.5 rounded-xl" style="background:#fff5f5; border:1px solid #ffe0e0;">
-                        <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5"></i>
+                    <div class="text-sm mb-5 flex items-start gap-2 p-3 rounded-md" style="background:#fef2f2; border:1px solid #fecaca; color:var(--danger);">
+                        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                         <span>没能识别出课程，请按「每周X X:XX-X:XX 课程名」的格式重新输入，例如：每周一三五 8:00-9:40 高等数学。</span>
                     </div>
                     <div class="flex justify-end gap-3">
-                        <button id="aiCourseBackBtn2" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">返回修改</button>
+                        <button id="aiCourseBackBtn2" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">返回修改</button>
                     </div>
                 `;
                 inputStep.classList.add('hidden');
@@ -2212,17 +2241,17 @@
             }
 
             resultStep.innerHTML = `
-                <div class="text-xs text-slate-500 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-robot text-indigo-300"></i>
+                <div class="text-xs mb-3 flex items-center gap-2" style="color:var(--text-muted);">
+                    <i class="fa-solid fa-robot"></i>
                     已为你添加 ${added.length} 门课程：
                 </div>
                 <div class="space-y-2 mb-4 max-h-64 overflow-y-auto pr-1">
                     ${added.map(item => `
                         <div class="ai-task-preview">
-                            <div class="ai-task-index"><i class="fa-solid fa-check text-emerald-500" style="font-size:0.65rem;"></i></div>
+                            <div class="ai-task-index"><i class="fa-solid fa-check" style="color:var(--success); font-size:0.6rem;"></i></div>
                             <div class="flex-1 min-w-0">
-                                <div class="text-sm font-medium text-slate-800 truncate">${item.title}</div>
-                                <div class="text-xs text-slate-400 mt-0.5">
+                                <div class="text-sm font-medium truncate" style="color:var(--text);">${item.title}</div>
+                                <div class="text-xs mt-0.5" style="color:var(--text-muted);">
                                     <i class="fa-regular fa-clock mr-1"></i>${item.start}-${item.end} · ${item.dayStr}
                                 </div>
                             </div>
@@ -2230,15 +2259,15 @@
                     `).join('')}
                 </div>
                 ${failed.length ? `
-                    <div class="text-xs text-rose-500 mb-5 p-2.5 rounded-xl leading-relaxed" style="background:#fff5f5; border:1px solid #ffe0e0;">
+                    <div class="text-xs mb-5 p-2.5 rounded-md leading-relaxed" style="background:#fef2f2; border:1px solid #fecaca; color:var(--danger);">
                         <i class="fa-solid fa-triangle-exclamation mr-1"></i>
                         以下内容未能识别：${failed.join('；')}
                     </div>
                 ` : ''}
                 <div class="flex justify-end gap-3">
-                    <button id="aiCourseBackBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">继续添加</button>
-                    <button id="aiCourseDoneBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">
-                        <i class="fa-solid fa-check mr-1"></i>完成
+                    <button id="aiCourseBackBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">继续添加</button>
+                    <button id="aiCourseDoneBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">
+                        <i class="fa-solid fa-check mr-1.5"></i>完成
                     </button>
                 </div>
             `;
@@ -2279,31 +2308,31 @@
         ];
 
         const repeatCheckboxes = repeatDays.map(day => `
-            <label class="inline-flex items-center mr-3 text-sm text-slate-600 cursor-pointer">
+            <label class="inline-flex items-center mr-3 text-sm cursor-pointer" style="color:var(--text-secondary);">
                 <input type="checkbox" class="repeat-checkbox mr-1.5" value="${day.value}" ${task.repeat.includes(day.value) ? 'checked' : ''}> ${day.label}
             </label>
         `).join('');
 
         overlay.innerHTML = `
             <div class="dialog-box">
-                <h3 class="text-lg font-bold mb-5 text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-repeat text-indigo-300"></i> ${isEdit ? '编辑长期任务' : '新增长期任务'}
+                <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color:var(--text);">
+                    <i class="fa-solid fa-repeat" style="color:var(--text-muted);"></i> ${isEdit ? '编辑长期任务' : '新增长期任务'}
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">标题</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">标题</label>
                         <input id="dialogTitle" type="text" value="${task.title}">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">时长（如 30分钟）</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">时长（如 30分钟）</label>
                         <input id="dialogDuration" type="text" value="${task.duration}">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">重复日</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">重复日</label>
                         <div class="flex flex-wrap gap-1">${repeatCheckboxes}</div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">优先级</label>
+                        <label class="block text-sm font-medium mb-1.5" style="color:var(--text-secondary);">优先级</label>
                         <select id="dialogPriority">
                             <option value="高">高</option>
                             <option value="中" selected>中</option>
@@ -2312,8 +2341,8 @@
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-7">
-                    <button id="dialogCancelBtn" class="border border-slate-200 px-5 py-2.5 text-sm rounded-xl text-slate-600 hover:bg-slate-50">取消</button>
-                    <button id="dialogSaveBtn" class="btn-primary px-5 py-2.5 text-sm font-semibold" style="border-radius:14px;">保存</button>
+                    <button id="dialogCancelBtn" class="px-4 py-2 text-sm font-medium" style="border-radius:6px;">取消</button>
+                    <button id="dialogSaveBtn" class="btn-primary px-4 py-2 text-sm font-medium" style="border-radius:6px;">保存</button>
                 </div>
             </div>
         `;

@@ -6,7 +6,7 @@ import { computed } from 'vue'
  * icon 支持两种写法:
  *   1) emoji / 文本,例如 icon="🎯";
  *   2) Element Plus 图标组件,例如 :icon="Sunny"(调用方自己 import 后传组件)。
- * 传了 actionText 就渲染一个紫色主按钮,点击时 emit('action')。
+ * 传了 actionText 就渲染一个主按钮(道奇蓝),点击时 emit('action')。
  */
 const props = defineProps({
   /** emoji 文本或 Element Plus 图标组件 */
@@ -58,7 +58,7 @@ function handleAction() {
   text-align: center;
 }
 
-/* 图标底衬:与全局 .icon-circle.lg 同一套配色 */
+/* 图标底衬:与全局 .icon-circle 同一套中性配色 */
 .empty-icon {
   display: flex;
   align-items: center;
@@ -66,9 +66,10 @@ function handleAction() {
   width: 64px;
   height: 64px;
   margin-bottom: 6px;
-  border-radius: 20px;
-  background: #e4e9ff;
-  color: #6b7ac9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--hover);
+  color: var(--text-secondary);
 }
 
 .empty-emoji {
@@ -79,12 +80,12 @@ function handleAction() {
 .empty-text {
   font-size: 15px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text);
 }
 
 .empty-sub-text {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .empty-action {

@@ -192,15 +192,15 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   gap: 16px;
-  /* 卡片本身已有内边距,这里只留上下的呼吸空间,底部一条浅分隔线(原型同款) */
+  /* 卡片本身已有内边距,这里只留上下的呼吸空间,底部一条分隔线(原型同款) */
   padding: 4px 0 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border);
 }
 
 .navbar-brand {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #6b7ac9;
+  color: var(--text);
 }
 
 /* 4 个胶囊之间的间距 */
@@ -214,31 +214,30 @@ async function handleLogout() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: 12px;
-  color: #64748b;
-  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.12s ease;
 }
 
 .nav-item:hover {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--hover);
+  color: var(--text);
 }
 
-/* 选中态:vue-router 自动加的类 */
+/* 选中态:vue-router 自动加的类(原型 .nav-link.active) */
 .nav-item.router-link-active {
-  background: #e8ebfd;
-  color: #4e5590;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(168, 179, 247, 0.4);
 }
 
 .nav-item.router-link-active:hover {
-  background: #dfe3fd;
-  color: #3e467a;
+  background: #e6e9f8;
+  color: var(--accent);
 }
 
 .nav-icon {
@@ -263,24 +262,23 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 50%;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.12s ease;
 }
 
 .avatar-btn:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 6px 16px -6px rgba(140, 160, 210, 0.5);
+  border-color: var(--border-strong);
 }
 
 .avatar-emoji {
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
@@ -290,18 +288,18 @@ async function handleLogout() {
   object-fit: cover;
 }
 
-/* 下拉浮层:绝对定位到头像右下方 */
+/* 下拉浮层:绝对定位到头像右下方(原型:200px 宽、8px 圆角、轻投影) */
 .user-dropdown {
   position: absolute;
-  top: 48px;
+  top: 42px;
   right: 0;
   z-index: 50;
-  width: 210px;
-  padding: 8px;
-  background: #fff;
-  border: 1px solid #eef2f8;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px -10px rgba(120, 140, 220, 0.35);
+  width: 200px;
+  padding: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.15);
 }
 
 .user-menu-item {
@@ -309,39 +307,39 @@ async function handleLogout() {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  color: #334155;
+  color: var(--text);
   text-align: left;
   background: transparent;
   border: none;
-  border-radius: 10px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.1s ease;
 }
 
 .user-menu-item:hover {
-  background: #f1f5f9;
+  background: var(--hover);
 }
 
-/* 普通菜单项的图标用主题紫 */
+/* 普通菜单项的图标用中性灰(原型同款) */
 .user-menu-icon {
-  width: 18px;
-  font-size: 16px;
-  color: #6b7ac9;
+  width: 16px;
+  font-size: 15px;
+  color: var(--text-muted);
 }
 
 .user-menu-divider {
   height: 1px;
-  margin: 6px 8px;
-  background: #f1f5f9;
+  margin: 4px 6px;
+  background: var(--border);
 }
 
 /* 危险项:退出登录(颜色随 currentColor 生效) */
 .user-menu-item.user-menu-danger {
-  color: #e11d48;
+  color: var(--danger);
 }
 
 .user-menu-item.user-menu-danger:hover {

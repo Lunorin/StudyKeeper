@@ -260,13 +260,13 @@ async function handleSave() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 64px;
+  height: 64px;
   margin-bottom: 12px;
   overflow: hidden;
-  border: 2px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 50%;
-  background: #f1f5f9;
+  background: var(--hover);
 }
 
 .avatar-preview-emoji {
@@ -287,32 +287,30 @@ async function handleSave() {
   margin-bottom: 12px;
 }
 
-/* 可选 emoji:圆形小按钮,选中浅紫描边(原型同款) */
+/* 可选 emoji:小方块按钮,选中道奇蓝描边(原型同款) */
 .avatar-option {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   padding: 0;
   font-family: inherit;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   line-height: 1;
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
 }
 
 .avatar-option:hover {
-  background: #eef2ff;
-  transform: scale(1.08);
+  border-color: var(--accent);
 }
 
 .avatar-option.is-active {
-  border-color: #a5b4fc;
-  background: #eef2ff;
+  border-color: var(--dodger-blue);
 }
 
 .hidden-file {

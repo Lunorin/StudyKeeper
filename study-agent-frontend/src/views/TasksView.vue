@@ -279,14 +279,14 @@ onMounted(loadTemplates)
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  border-radius: 14px;
-  transition: background 0.2s ease;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 6px;
+  transition: background 0.12s ease;
 }
 
 .template-item:hover {
-  background: #fafbff;
+  background: var(--bg);
 }
 
 .template-item:last-child {
@@ -301,7 +301,7 @@ onMounted(loadTemplates)
 .template-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text);
 }
 
 .template-meta {
@@ -310,7 +310,7 @@ onMounted(loadTemplates)
   gap: 4px;
   margin-top: 4px;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .template-actions {

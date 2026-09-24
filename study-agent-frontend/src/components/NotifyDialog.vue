@@ -105,7 +105,7 @@ async function handleSave() {
 </template>
 
 <style scoped>
-/* 一行一个开关:左边文案、右边开关,整行浅色边框 */
+/* 一行一个开关:左边文案、右边开关,整行细描边 */
 .notify-row {
   display: flex;
   align-items: center;
@@ -113,9 +113,9 @@ async function handleSave() {
   gap: 12px;
   padding: 12px 14px;
   margin-bottom: 10px;
-  border: 1px solid #eef2f8;
-  border-radius: 14px;
-  transition: background 0.2s ease;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: background 0.12s ease;
 }
 
 .notify-row:last-child {
@@ -123,7 +123,7 @@ async function handleSave() {
 }
 
 .notify-row:hover {
-  background: #fafbff;
+  background: var(--bg);
 }
 
 .notify-text {
@@ -133,12 +133,12 @@ async function handleSave() {
 .notify-label {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text);
 }
 
 .notify-hint {
   margin-top: 2px;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 </style>

@@ -599,9 +599,9 @@ watch(() => route.query.aiArrange, openAiDialogFromQuery, { immediate: true })
 }
 
 .summary-date {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .summary-progress {
@@ -613,12 +613,12 @@ watch(() => route.query.aiArrange, openAiDialogFromQuery, { immediate: true })
 
 .summary-label {
   font-size: 14px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 .summary-count {
   font-weight: 600;
-  color: #6b7ac9;
+  color: var(--text);
 }
 
 .summary-bar {
@@ -637,14 +637,14 @@ watch(() => route.query.aiArrange, openAiDialogFromQuery, { immediate: true })
 .task-card-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text);
 }
 
 .empty-tip {
   padding: 32px 0;
   text-align: center;
   font-size: 14px;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .task-item {
@@ -653,14 +653,14 @@ watch(() => route.query.aiArrange, openAiDialogFromQuery, { immediate: true })
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  border-radius: 14px;
-  transition: background 0.2s ease;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 6px;
+  transition: background 0.12s ease;
 }
 
 .task-item:hover {
-  background: #fafbff;
+  background: var(--bg);
 }
 
 .task-item:last-child {
@@ -675,18 +675,18 @@ watch(() => route.query.aiArrange, openAiDialogFromQuery, { immediate: true })
 .task-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text);
 }
 
 .task-title.is-done {
-  color: #909399;
+  color: var(--text-muted);
   text-decoration: line-through;
 }
 
 .task-meta {
   margin-top: 4px;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 
 .task-actions {
@@ -706,7 +706,7 @@ watch(() => route.query.aiArrange, openAiDialogFromQuery, { immediate: true })
 .ai-tip {
   margin-bottom: 12px;
   font-size: 13px;
-  color: #909399;
+  color: var(--text-muted);
 }
 
 /* 结果可能很多(实测一次 11 条),固定高度可滚动;行样式用全局 .ai-task-preview */
@@ -726,14 +726,14 @@ watch(() => route.query.aiArrange, openAiDialogFromQuery, { immediate: true })
 .ai-task-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text);
   word-break: break-all;
 }
 
 .ai-task-meta {
   margin-top: 2px;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 
 /* 空状态与下面的卡片之间留 16px(沿用原来提示条的间距) */

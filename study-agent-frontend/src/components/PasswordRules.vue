@@ -48,7 +48,7 @@ const hasUnsupportedChar = computed(
   margin-bottom: 4px;
   font-size: 12px;
   line-height: 1.4;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 
 .pwd-rule:last-child {
@@ -56,7 +56,7 @@ const hasUnsupportedChar = computed(
 }
 
 .pwd-rule.is-ok {
-  color: #34d399;
+  color: var(--success);
 }
 
 .pwd-rule-mark {
@@ -67,6 +67,6 @@ const hasUnsupportedChar = computed(
 
 /* 4 条全绿但仍不合法(用了不支持的字符)时的提醒 */
 .pwd-rule-extra {
-  color: #f56c6c;
+  color: var(--danger);
 }
 </style>

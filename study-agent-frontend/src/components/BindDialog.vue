@@ -122,13 +122,13 @@ async function handleSave() {
   width: 100%;
 }
 
-/* 提示条:与设置页的 AI 提示条同一套配色 */
+/* 提示条:与设置页的 AI 提示条同一套配色(原型:浅灰底 + 细描边) */
 .dialog-hint {
   padding: 10px 12px;
   font-size: 12px;
-  color: #6b7ac9;
-  background: #eef2ff;
-  border: 1px solid #dfe6ff;
-  border-radius: 12px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
 </style>

@@ -80,7 +80,7 @@ async function handleSubmit() {
 <template>
   <div class="auth-page">
     <div class="auth-box">
-      <!-- 原型:大号圆角图标 + 渐变标题 + 副标题 -->
+      <!-- 原型:道奇蓝方块图标 + 标题 + 副标题 -->
       <div class="icon-circle lg auth-icon">
         <el-icon><School /></el-icon>
       </div>

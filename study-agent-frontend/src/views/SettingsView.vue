@@ -104,15 +104,15 @@ function formatTimeRange(course) {
 /** 每小时占多少像素(原型:1 小时 = 60px,也就是 1 分钟 = 1px) */
 const HOUR_HEIGHT = 60
 
-/** 同一课程名 -> 同一浅色(原型 getCourseColor 的 7 色表) */
+/** 同一课程名 -> 同一浅色(原型 getCourseColor 的 7 色表:同一靛蓝色系的 7 个深浅档) */
 const COURSE_COLORS = [
-  { bg: '#FFFDE7', border: '#FFF9C4', text: '#F57F17' },
-  { bg: '#E3F2FD', border: '#BBDEFB', text: '#0D47A1' },
-  { bg: '#E8F5E9', border: '#C8E6C9', text: '#1B5E20' },
-  { bg: '#F3E5F5', border: '#E1BEE7', text: '#4A148C' },
-  { bg: '#FFEBEE', border: '#FFCDD2', text: '#B71C1C' },
-  { bg: '#E0F7FA', border: '#B2EBF2', text: '#006064' },
-  { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100' }
+  { bg: '#eef0fb', border: '#dde1f5', text: '#3f4a9e' },
+  { bg: '#e8ebfa', border: '#d5daf2', text: '#3a4590' },
+  { bg: '#e2e6f8', border: '#ccd3ef', text: '#354080' },
+  { bg: '#dde1f6', border: '#c5cdec', text: '#303a72' },
+  { bg: '#d8ddf4', border: '#bdc6e8', text: '#2b3465' },
+  { bg: '#eef2f8', border: '#dbe2ee', text: '#4a5570' },
+  { bg: '#e8eef6', border: '#d2dcea', text: '#42506a' }
 ]
 
 /** HH:mm -> 当天的第几分钟;解析不出来返回 null */
@@ -575,17 +575,20 @@ const MEMORY_CATEGORY_OPTIONS = MEMORY_CATEGORY_ORDER.map((value) => ({
   label: MEMORY_CATEGORY_LABELS[value]
 }))
 
-/** 分组标题的颜色标记:沿用课表那套「浅底 + 深字」配色,让 5 类一眼能区分 */
+/**
+ * 分组标题的颜色标记:原型没有这块 UI,这里按新配色做了低饱和处理
+ * (浅底 + 深字,只保留一点色相差异来区分 5 类,和整体中性风一致)
+ */
 const MEMORY_CATEGORY_COLORS = {
-  event: { bg: '#F3E5F5', color: '#4A148C' },
-  goal: { bg: '#E3F2FD', color: '#0D47A1' },
-  emotion: { bg: '#FFEBEE', color: '#B71C1C' },
-  habit: { bg: '#E8F5E9', color: '#1B5E20' },
-  preference: { bg: '#FFF3E0', color: '#E65100' }
+  event: { bg: '#f3eefb', color: '#5b4a9e' },
+  goal: { bg: '#eef0fb', color: '#3f4a9e' },
+  emotion: { bg: '#fbecec', color: '#a13a3a' },
+  habit: { bg: '#edf7f0', color: '#2f6b45' },
+  preference: { bg: '#fbf3ea', color: '#98611f' }
 }
 
 /** 没见过的 category 用中性灰兜底 */
-const MEMORY_FALLBACK_COLOR = { bg: '#f1f5f9', color: '#475569' }
+const MEMORY_FALLBACK_COLOR = { bg: '#f5f5f5', color: '#525252' }
 
 /** 内容长度上限,与后端校验保持一致 */
 const MEMORY_CONTENT_MAX = 500
@@ -1358,7 +1361,7 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   gap: 12px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f0f4fa;
+  border-bottom: 1px solid var(--border);
 }
 
 .section-title {
@@ -1367,23 +1370,23 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   gap: 6px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--text);
 }
 
 .empty-tip {
   padding: 32px 0;
   text-align: center;
   font-size: 14px;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* ==================== 整周网格课表(照原型 .timetable-* 实现) ==================== */
 .timetable-grid-container {
   height: 600px;
   overflow-y: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
   margin-bottom: 16px;
 }
 
@@ -1392,8 +1395,8 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #fff;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
 /* 表头左侧空出时间轴的宽度 */
@@ -1409,12 +1412,12 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
 
 .timetable-header-day {
   flex: 1;
-  padding: 12px 0;
-  font-size: 0.8rem;
+  padding: 10px 0;
+  font-size: 0.75rem;
   font-weight: 600;
   text-align: center;
-  color: #64748b;
-  border-right: 1px solid #f1f5f9;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border);
 }
 
 .timetable-header-day:last-child {
@@ -1431,8 +1434,8 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   flex-shrink: 0;
   position: relative;
   z-index: 2;
-  background: #fff;
-  border-right: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
 }
 
 .timetable-time-label {
@@ -1440,10 +1443,10 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 4px;
+  padding-top: 6px;
   box-sizing: border-box;
-  font-size: 0.7rem;
-  color: #94a3b8;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
 }
 
 /* 每小时一条浅分隔线 */
@@ -1454,8 +1457,8 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
     to bottom,
     transparent,
     transparent 59px,
-    #f8fafc 59px,
-    #f8fafc 60px
+    var(--hover) 59px,
+    var(--hover) 60px
   );
 }
 
@@ -1465,17 +1468,15 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   align-items: center;
   justify-content: center;
   padding: 6px 4px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
   box-sizing: border-box;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: filter 0.12s ease;
 }
 
 .course-block:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  filter: brightness(0.97);
   z-index: 5;
 }
 
@@ -1487,8 +1488,8 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.6875rem;
+  font-weight: 500;
   line-height: 1.3;
   text-align: center;
   word-break: break-all;
@@ -1510,14 +1511,13 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  color: #ef4444;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  color: var(--danger);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 4px;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.12s ease;
 }
 
 .course-block:hover .course-delete-btn {
@@ -1545,14 +1545,14 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  border-radius: 14px;
-  transition: background 0.2s ease;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 6px;
+  transition: background 0.12s ease;
 }
 
 .rest-item:hover {
-  background: #fafbff;
+  background: var(--bg);
 }
 
 .rest-item:last-child {
@@ -1570,13 +1570,13 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text);
 }
 
 .rest-meta {
   margin-top: 4px;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 
 .rest-actions {
@@ -1612,7 +1612,7 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
 
 .stats-label {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .stats-value {
@@ -1620,31 +1620,27 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.2;
-  color: #1e293b;
+  color: var(--text);
 }
 
 .stats-total {
   font-size: 15px;
   font-weight: 400;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 
+/* 完成度百分比:原型两张卡片都用道奇蓝 */
 .stats-percent {
   margin-top: 2px;
   font-size: 13px;
   font-weight: 600;
-  color: #6b7ac9;
-}
-
-/* 本周完成度用原型里的暖色 */
-.stats-percent.week {
-  color: #c28b3a;
+  color: var(--dodger-blue);
 }
 
 .stats-range {
   margin-top: 4px;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 
 .chart-title {
@@ -1654,11 +1650,11 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   margin-bottom: 12px;
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text);
 }
 
 .chart-title-icon {
-  color: #a5b4fc;
+  color: var(--text-muted);
 }
 
 /* 柱状图:手写 div,沿用原型的 .bar-chart / .bar-item / .bar-fill 结构 */
@@ -1683,27 +1679,30 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   height: 160px;
 }
 
+/* 柱子:原型 .bar-fill 是中性灰,悬停整根变强调色 */
 .bar-fill {
   width: 100%;
   height: 0;
-  border-radius: 8px 8px 4px 4px;
-  /* 原型 .bar-fill 的紫色渐变 */
-  background: linear-gradient(180deg, #b8c5fd 0%, #d9c7f0 100%);
-  box-shadow: 0 4px 10px rgba(165, 180, 252, 0.5);
-  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 3px 3px 0 0;
+  background: var(--border-strong);
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bar-item:hover .bar-fill {
+  background: var(--accent);
 }
 
 .bar-label {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 12px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .bar-value {
   margin-top: 2px;
   font-size: 12px;
-  color: #909399;
+  color: var(--text-muted);
 }
 
 /* 原型:列表下方的按钮行 */
@@ -1719,7 +1718,7 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   margin-left: 0;
 }
 
-/* 原型:课表上方的 AI 提示条 */
+/* 原型:课表上方的 AI 提示条(浅灰底 + 细描边) */
 .ai-tip-banner {
   display: flex;
   align-items: center;
@@ -1727,17 +1726,17 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   margin-bottom: 16px;
   padding: 12px;
   font-size: 12px;
-  color: #6b7ac9;
-  background: #eef2ff;
-  border: 1px solid #dfe6ff;
-  border-radius: 12px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
 
 /* AI 帮我加课程弹窗 */
 .ai-hint {
   margin-top: -8px;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 
 .ai-course-list {
@@ -1750,7 +1749,7 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   align-items: flex-start;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--border);
 }
 
 .ai-course-item:last-child {
@@ -1771,13 +1770,13 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
 .ai-course-name {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text);
 }
 
 .ai-course-meta {
   margin-top: 2px;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--text-muted);
 }
 
 .ai-failed {
@@ -1785,10 +1784,10 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   padding: 8px 12px;
   font-size: 12px;
   line-height: 1.6;
-  color: #f56c6c;
-  background: #fef0f0;
-  border: 1px solid #fde2e2;
-  border-radius: 4px;
+  color: var(--danger);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
   word-break: break-all;
 }
 
@@ -1809,7 +1808,7 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text);
 }
 
 .memory-dot {
@@ -1833,14 +1832,14 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  border-radius: 14px;
-  transition: background 0.2s ease;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 6px;
+  transition: background 0.12s ease;
 }
 
 .memory-item:hover {
-  background: #fafbff;
+  background: var(--bg);
 }
 
 .memory-item:last-child {
@@ -1852,7 +1851,7 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
   min-width: 220px;
   font-size: 14px;
   line-height: 1.6;
-  color: #303133;
+  color: var(--text);
   word-break: break-word;
   white-space: pre-wrap;
 }
