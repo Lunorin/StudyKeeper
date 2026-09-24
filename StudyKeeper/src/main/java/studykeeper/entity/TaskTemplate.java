@@ -6,47 +6,35 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 /**
- * 任务实体，对应数据表 task。
+ * 长期任务模板实体，对应数据表 task_template。
  */
 @Data
-@TableName("task")
-public class Task {
+@TableName("task_template")
+public class TaskTemplate {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
     private Long userId;
 
-    private Long templateId;
-
-    private String planBatchId;
-
     private String title;
 
     private String description;
-
-    private LocalDate planDate;
-
-    private LocalTime startTime;
-
-    private LocalTime endTime;
 
     private Integer duration;
 
     private String priority;
 
+    /** 重复的星期，存成 "1,3,5" 这样的字符串；对外接口转成数组 */
+    private String repeatDays;
+
     private BigDecimal difficulty;
 
-    private String status;
-
-    private LocalDateTime completedAt;
-
-    private String source;
+    /** 是否启用：1 启用，0 停用 */
+    private Integer active;
 
     private LocalDateTime createdAt;
 

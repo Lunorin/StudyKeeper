@@ -1,0 +1,2 @@
+MAX_CHAT_REST_TIMES = 50        # /ai/chat：今日休息时段最多 50 条
+MAX_CHAT_MEMORIES = 50          # /ai/chat：用户画像记忆最多 50 条（Java 侧每类最多 3 条）
