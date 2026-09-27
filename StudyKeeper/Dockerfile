@@ -12,6 +12,7 @@ WORKDIR /app
 # 先把 pom.xml 单独拷进来把依赖拉下来：这样「只改业务代码」时这一层还能命中缓存，
 # 不用每次重新下几百 MB 的 maven 依赖。
 # （末尾的 || true：go-offline 偶尔会因为个别插件解析不了而失败，失败也无所谓 —— 下一步 package 才是真的校验）
+COPY settings.xml /usr/share/maven/conf/settings.xml
 COPY pom.xml ./
 RUN mvn -B -DskipTests dependency:go-offline || true
 

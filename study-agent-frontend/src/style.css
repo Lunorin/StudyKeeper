@@ -11,10 +11,13 @@
   --text-muted: #a3a3a3;
   --hover: #f5f5f5;
 
-  /* 强调色:导航 / 页签选中、链接、图标高亮 */
-  --accent: #5e6ad2;
-  --accent-hover: #4f5ac0;
-  --accent-soft: #eef0fb;
+  /* 强调色:导航 / 页签选中、链接、图标高亮(深海军蓝 #1E40AF) */
+  --accent: #1e40af;
+  --accent-hover: #1a3a9e;
+  --accent-soft: #e8eefb;
+  /* 选中态 hover 的浅色底 / 描边(海军蓝的浅色衍生) */
+  --accent-soft-hover: #dce6f8;
+  --accent-soft-border: #c3cfef;
 
   /* 语义色 */
   --danger: #dc2626;
@@ -198,7 +201,7 @@ body {
 .el-textarea__inner:focus {
   box-shadow:
     0 0 0 1px var(--accent) inset,
-    0 0 0 3px rgba(94, 106, 210, 0.12);
+    0 0 0 3px rgba(30, 64, 175, 0.14);
 }
 
 /* 占位符:原型 input::placeholder */
@@ -288,7 +291,7 @@ body {
 
 .el-radio-button__original-radio:checked + .el-radio-button__inner {
   background: var(--accent-soft);
-  border-color: #c7cdf0 !important;
+  border-color: var(--accent-soft-border) !important;
   color: var(--accent);
   font-weight: 600;
   box-shadow: none !important;
@@ -464,7 +467,7 @@ body {
 
 .time-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(94, 106, 210, 0.12);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.14);
   outline: none;
 }
 

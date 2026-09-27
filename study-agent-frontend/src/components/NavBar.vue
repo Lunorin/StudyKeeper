@@ -236,7 +236,7 @@ async function handleLogout() {
 }
 
 .nav-item.router-link-active:hover {
-  background: #e6e9f8;
+  background: var(--accent-soft-hover);
   color: var(--accent);
 }
 

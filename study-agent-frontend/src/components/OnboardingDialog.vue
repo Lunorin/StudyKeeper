@@ -199,7 +199,7 @@ function handleSkip() {
 
 .onboarding-dot.is-active {
   background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(94, 106, 210, 0.15);
+  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.15);
 }
 
 /* 标题上方的小图标:中性灰方块,和其他图标底衬同一套配色 */

@@ -104,15 +104,18 @@ function formatTimeRange(course) {
 /** 每小时占多少像素(原型:1 小时 = 60px,也就是 1 分钟 = 1px) */
 const HOUR_HEIGHT = 60
 
-/** 同一课程名 -> 同一浅色(原型 getCourseColor 的 7 色表:同一靛蓝色系的 7 个深浅档) */
+/**
+ * 课表 7 色:蓝、粉、绿、橙、紫、青、黄(浅底 + 中深字,和整体浅色界面同明度档)。
+ * 顺序刻意做成冷暖交替,这样「顺延一个色号」得到的颜色差异就很明显。
+ */
 const COURSE_COLORS = [
-  { bg: '#eef0fb', border: '#dde1f5', text: '#3f4a9e' },
-  { bg: '#e8ebfa', border: '#d5daf2', text: '#3a4590' },
-  { bg: '#e2e6f8', border: '#ccd3ef', text: '#354080' },
-  { bg: '#dde1f6', border: '#c5cdec', text: '#303a72' },
-  { bg: '#d8ddf4', border: '#bdc6e8', text: '#2b3465' },
-  { bg: '#eef2f8', border: '#dbe2ee', text: '#4a5570' },
-  { bg: '#e8eef6', border: '#d2dcea', text: '#42506a' }
+  { bg: '#e3efff', border: '#c3dcfb', text: '#1d4ed8' }, // 蓝
+  { bg: '#fdeaf1', border: '#fbd0e0', text: '#be185d' }, // 粉
+  { bg: '#e6f6ec', border: '#c6ead4', text: '#15803d' }, // 绿
+  { bg: '#fdf0e3', border: '#fadcbe', text: '#c2410c' }, // 橙
+  { bg: '#f3ecfd', border: '#e2d3fa', text: '#7e22ce' }, // 紫
+  { bg: '#e2f6f7', border: '#bfe9ec', text: '#0e7490' }, // 青
+  { bg: '#fdf6dd', border: '#f7e7b2', text: '#a16207' } // 黄
 ]
 
 /** HH:mm -> 当天的第几分钟;解析不出来返回 null */
@@ -124,15 +127,94 @@ function toMinutes(value) {
   return hour * 60 + minute
 }
 
-/** 课程块配色:按课程名哈希,保证同名同色 */
-function courseColor(name) {
+/** 按课程名哈希取色号:同名课程一定拿到同一个色号 */
+function courseColorIndex(name) {
   const text = String(name || '')
   let hash = 0
   for (let i = 0; i < text.length; i += 1) {
     hash = text.charCodeAt(i) + ((hash << 5) - hash)
   }
-  return COURSE_COLORS[Math.abs(hash) % COURSE_COLORS.length]
+  return Math.abs(hash) % COURSE_COLORS.length
 }
+
+/** 只用名字哈希的配色(课表实际用的是 courseColorIndexMap 的避让结果) */
+function courseColor(name) {
+  return COURSE_COLORS[courseColorIndex(name)]
+}
+
+/**
+ * 两个课程块是否算「相邻」——相邻的课程必须用不同色号:
+ *   - 同一天、时间相接(上节下课 = 下节上课)或重叠 => 上下相邻;
+ *   - 相邻两天、时间重叠 => 左右相邻。
+ * 斜对角(隔天且时间不相接)不算相邻,允许撞色。
+ */
+function isNeighborBlock(a, b) {
+  if (a.dayIndex === b.dayIndex) {
+    return a.start <= b.end && b.start <= a.end
+  }
+  return Math.abs(a.dayIndex - b.dayIndex) === 1 && a.start < b.end && b.start < a.end
+}
+
+/**
+ * 每门课最终用哪个色号,规则:
+ *   1. 先按课程名哈希算首选色号(同名同色,周一到周日都不变);
+ *   2. 遇到「相邻」的其他课程时,从首选色号往后顺延,取第一个没被邻居占用的色号;
+ *   3. 7 个色号都被邻居占满时退回首选色号(极端密集的课表,概率很低)。
+ * 结果只取决于课程数据(排序后再分配),与接口返回顺序无关,所以刷新不会跳色。
+ */
+const courseColorIndexMap = computed(() => {
+  const blocks = courses.value
+    .map((course, order) => {
+      const start = toMinutes(course.startTime)
+      const end = toMinutes(course.endTime)
+      const dayIndex = Math.min(Math.max((course.dayOfWeek || 1) - 1, 0), 6)
+      const from = start === null ? 0 : start
+      return {
+        course,
+        order,
+        name: String(course.courseName || ''),
+        dayIndex,
+        start: from,
+        // 时间解析不出来时给 1 分钟的占位,避免被当成「和谁都不冲突」
+        end: start !== null && end !== null && end > start ? end : from + 1
+      }
+    })
+    .sort(
+      (a, b) =>
+        a.dayIndex - b.dayIndex || a.start - b.start || a.end - b.end || a.order - b.order
+    )
+
+  /* 每个色号已占用的课程块,用来判断后面排的课是否与它相邻 */
+  const occupied = COURSE_COLORS.map(() => [])
+  /* 同名课程的首选色号缓存 */
+  const preferredByName = new Map()
+  const result = new Map()
+
+  blocks.forEach((block) => {
+    if (!preferredByName.has(block.name)) {
+      preferredByName.set(block.name, courseColorIndex(block.name))
+    }
+    const preferred = preferredByName.get(block.name)
+
+    let picked = preferred
+    for (let step = 0; step < COURSE_COLORS.length; step += 1) {
+      const index = (preferred + step) % COURSE_COLORS.length
+      const clash = occupied[index].some(
+        // 同名课程之间不算冲突:同一门课本来就该同色
+        (slot) => slot.name !== block.name && isNeighborBlock(slot, block)
+      )
+      if (!clash) {
+        picked = index
+        break
+      }
+    }
+
+    occupied[picked].push(block)
+    result.set(block.course, picked)
+  })
+
+  return result
+})
 
 /** 时间轴起始小时:默认 08:00,有更早的课就往前扩 */
 const gridStartHour = computed(() => {
@@ -171,8 +253,9 @@ const hourLabels = computed(() => {
 const gridHeight = computed(() => (gridEndHour.value - gridStartHour.value) * HOUR_HEIGHT)
 
 /**
- * 课程块的绝对定位 + 配色,算法与原型一致:
- * top / height 按分钟(1 分钟 = 1px),left / width 按 7 等分列。
+ * 课程块的绝对定位 + 配色:
+ * top / height 按分钟(1 分钟 = 1px),left / width 按 7 等分列;
+ * 颜色取 courseColorIndexMap(按名称哈希 + 相邻课程避让),同名课程始终同色。
  */
 function courseBlockStyle(course) {
   const start = toMinutes(course.startTime)
@@ -180,7 +263,8 @@ function courseBlockStyle(course) {
   const dayIndex = Math.min(Math.max((course.dayOfWeek || 1) - 1, 0), 6)
   const top = start === null ? 0 : start - gridStartHour.value * 60
   const height = start !== null && end !== null && end > start ? end - start : HOUR_HEIGHT
-  const color = courseColor(course.courseName)
+  const index = courseColorIndexMap.value.get(course)
+  const color = index === undefined ? courseColor(course.courseName) : COURSE_COLORS[index]
 
   return {
     top: `${top}px`,
@@ -576,15 +660,16 @@ const MEMORY_CATEGORY_OPTIONS = MEMORY_CATEGORY_ORDER.map((value) => ({
 }))
 
 /**
- * 分组标题的颜色标记:原型没有这块 UI,这里按新配色做了低饱和处理
- * (浅底 + 深字,只保留一点色相差异来区分 5 类,和整体中性风一致)
+ * 分组标题的颜色标记:与课表共用同一套浅色数据配色(见 COURSE_COLORS),
+ * 「事件」= 青、「目标」= 蓝、「情绪」= 粉、「习惯」= 绿、「偏好」= 橙,5 类一眼可分。
+ * 注意:这里刻意不用主题海军蓝,否则会跟「目标」的蓝色撞色。
  */
 const MEMORY_CATEGORY_COLORS = {
-  event: { bg: '#f3eefb', color: '#5b4a9e' },
-  goal: { bg: '#eef0fb', color: '#3f4a9e' },
-  emotion: { bg: '#fbecec', color: '#a13a3a' },
-  habit: { bg: '#edf7f0', color: '#2f6b45' },
-  preference: { bg: '#fbf3ea', color: '#98611f' }
+  event: { bg: '#e2f6f7', color: '#0e7490' }, // 青
+  goal: { bg: '#e3efff', color: '#1d4ed8' }, // 蓝
+  emotion: { bg: '#fdeaf1', color: '#be185d' }, // 粉
+  habit: { bg: '#e6f6ec', color: '#15803d' }, // 绿
+  preference: { bg: '#fdf0e3', color: '#c2410c' } // 橙
 }
 
 /** 没见过的 category 用中性灰兜底 */

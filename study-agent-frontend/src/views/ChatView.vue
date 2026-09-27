@@ -532,7 +532,7 @@ function handleEnter(event) {
 
 .quick-btn:hover {
   background: var(--accent-soft);
-  border-color: #c7cdf0;
+  border-color: var(--accent-soft-border);
 }
 
 /* AI 思考中按钮置灰,鼠标悬停也不再变色 */
