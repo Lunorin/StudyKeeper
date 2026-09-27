@@ -4,7 +4,6 @@
 
 [在线体验](http://8.163.81.8) · [接口文档](docs/api.md) · [架构设计](docs/architecture.md)
 
-![今日任务](docs/screenshots/today.png)
 
 ## 是什么
 
