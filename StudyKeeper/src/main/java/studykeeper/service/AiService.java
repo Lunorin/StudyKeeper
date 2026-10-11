@@ -68,7 +68,7 @@ import java.util.Map;
  * 匹配到了就用模型原本的 reply。其余工具（add / update / delete）的 reply 处理保持不变。
  * <p>
  * streamChat：把同一件事做成流式 —— 上下文与非流式完全一致，Python 换成 /ai/chat/stream，
- * 边收边把 delta 转发给前端；收尾时执行工具调用、落库回复，再把 tool_calls（含 affectedTaskIds）
+ * 边收边把 delta 转发给前端；收尾时执行工具调用、落库回复、异步提炼用户画像记忆，再把 tool_calls（含 affectedTaskIds）
  * 与 end 事件推给前端。这个方法是 SSE 的「生产者」，本身不加事务，落库走 ChatService 的独立事务。
  * <p>
  * parse-course：把原始课程文本 POST 给 Python → 原样返回解析结果（courses / failed）；
@@ -318,6 +318,8 @@ public class AiService {
 
         // 5. 异步提炼用户画像记忆：@Async 方法立刻返回，不阻塞本次响应、也不在当前事务里；
         //    里面自己吞异常（失败只打日志），所以放事务内调用也不会把聊天事务带崩
+        // 记忆提炼挂在两条链路上，因为前端可能走任一接口；
+        // 漏掉任一条都会导致用户画像失效
         memoryService.extractAndSave(userId, content, reply);
 
         AiChatResult result = new AiChatResult();
@@ -361,7 +363,7 @@ public class AiService {
             // c. 流式调 Python：逐行读 SSE，读到一条处理一条；返回「本轮是否正常收尾（收到 end / error）」
             Boolean finished = restTemplate.execute(baseUrl + CHAT_STREAM_PATH, HttpMethod.POST,
                     streamRequestBody(request),
-                    response -> readSseStream(response.getBody(), userId, pendingToolCalls, emitter));
+                    response -> readSseStream(response.getBody(), userId, content, pendingToolCalls, emitter));
             if (!Boolean.TRUE.equals(finished)) {
                 // Python 没发 end 就把连接关了（服务端异常 / 超时断流）：补一条 error 并关流，
                 // 否则前端会一直挂到 5 分钟超时
@@ -405,7 +407,7 @@ public class AiService {
      *
      * @return true 表示这条事件之后本轮已经结束（end / error），不用再往下读了
      */
-    private boolean handleStreamEvent(Long userId, ChatStreamEvent event,
+    private boolean handleStreamEvent(Long userId, String userMessage, ChatStreamEvent event,
                                       List<AiChatResponse.ToolCall> pendingToolCalls, SseEmitter emitter) {
         String type = event.getType() == null ? "" : event.getType().trim();
         switch (type) {
@@ -421,7 +423,7 @@ public class AiService {
                 }
                 return false;
             case ChatStreamEvent.TYPE_END:
-                handleStreamEnd(userId, event, pendingToolCalls, emitter);
+                handleStreamEnd(userId, userMessage, event, pendingToolCalls, emitter);
                 return true;
             case ChatStreamEvent.TYPE_ERROR:
                 log.warn("AI 服务流式返回错误：{}", event.getMessage());
@@ -436,14 +438,14 @@ public class AiService {
 
     /**
      * 流结束（end 事件）后的收尾，按这个顺序做：
-     * 执行工具调用 → （complete_task 没匹配到时换掉回复）→ 落库 assistant 消息 →
+     * 执行工具调用 → （complete_task 没匹配到时换掉回复）→ 落库 assistant 消息 → 异步提炼用户画像记忆 →
      * 推 tool_calls（带 affectedTaskIds）→ 推 end → 关流。
      * <p>
      * 这样排的好处：前端收到 tool_calls 时任务其实已经改好了，可以直接刷新任务列表。
      * 没有工具调用就不推这条事件（与 Python 侧「没有就不发」保持一致）。
      * 工具执行失败会抛 AiToolCallException，由 streamChat 统一转成一条 error 事件。
      */
-    private void handleStreamEnd(Long userId, ChatStreamEvent endEvent,
+    private void handleStreamEnd(Long userId, String userMessage, ChatStreamEvent endEvent,
                                  List<AiChatResponse.ToolCall> pendingToolCalls, SseEmitter emitter) {
         // 1. 执行工具调用（复用非流式 chat 的那套分派逻辑）
         ToolExecution execution = executeToolCalls(userId, pendingToolCalls);
@@ -458,7 +460,11 @@ public class AiService {
         String reply = endEvent.getReply() == null ? "" : endEvent.getReply();
         chatService.saveAssistantMessage(userId, reply);
 
-        // 4. 真有工具调用才补发 tool_calls：内容与 Python 给的一致，额外带上真正改到的任务 id
+        // 4. 异步提炼用户画像记忆：与非流式 chat 保持同一条链路（前端可能走任一接口，漏掉任一条都会让画像失效）；
+        //    紧跟落库之后、推 tool_calls 之前，@Async 立刻返回，不阻塞 emitter，也不在落库事务里（失败只打日志）
+        memoryService.extractAndSave(userId, userMessage, reply);
+
+        // 5. 真有工具调用才补发 tool_calls：内容与 Python 给的一致，额外带上真正改到的任务 id
         if (!pendingToolCalls.isEmpty()) {
             ChatStreamEvent toolCallsEvent = new ChatStreamEvent();
             toolCallsEvent.setType(ChatStreamEvent.TYPE_TOOL_CALLS);
@@ -467,7 +473,7 @@ public class AiService {
             sendEvent(emitter, toolCallsEvent);
         }
 
-        // 5. end 转发（reply 已按第 2 步调整过），然后关流
+        // 6. end 转发（reply 已按第 2 步调整过），然后关流
         sendEvent(emitter, endEvent);
         completeQuietly(emitter);
     }
@@ -481,7 +487,7 @@ public class AiService {
      *
      * @return true 表示本轮已经收到终止事件（end / error）；false 表示读到流末尾也没等到终止事件
      */
-    private boolean readSseStream(InputStream body, Long userId,
+    private boolean readSseStream(InputStream body, Long userId, String userMessage,
                                   List<AiChatResponse.ToolCall> pendingToolCalls, SseEmitter emitter)
             throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8))) {
@@ -491,7 +497,7 @@ public class AiService {
                 if (event == null) {
                     continue;
                 }
-                if (handleStreamEvent(userId, event, pendingToolCalls, emitter)) {
+                if (handleStreamEvent(userId, userMessage, event, pendingToolCalls, emitter)) {
                     // end / error：本轮已经结束，后面即使还有内容也不再处理
                     return true;
                 }

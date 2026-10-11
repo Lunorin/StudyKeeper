@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EmptyState from '../components/EmptyState.vue'
 import {
@@ -27,10 +27,11 @@ const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 /** 周几切换按钮 */
 const dayOptions = WEEK_LABELS.map((label, index) => ({ value: index + 1, label: `周${label}` }))
 
-/** 当前 Tab(可由 ?tab= 指定,见 applyTabFromQuery) */
+/** 当前 Tab(内部 name:course/rest/stats/memory;由 URL ?tab= 决定,见 applyTabFromQuery / syncTabToQuery) */
 const activeTab = ref('course')
 
 const route = useRoute()
+const router = useRouter()
 
 /** 默认选中今天:JS 的 getDay() 里 0 是周日,这里要转成 1~7 */
 function todayDayOfWeek() {
@@ -598,8 +599,11 @@ async function loadStats() {
   }
 }
 
-/** 切到「统计」/「AI 对我的了解」Tab 时才加载 */
+/** 切 Tab:同步 URL,并按需懒加载数据 */
 function handleTabChange(name) {
+  // 把当前 Tab 写进 URL(?tab=),刷新后仍停在这个 Tab,链接也能直接分享
+  syncTabToQuery(name)
+
   if (name === 'stats') {
     loadStats()
   } else if (name === 'memory') {
@@ -615,21 +619,42 @@ const TAB_NAME_BY_LABEL = {
   'AI 对我的了解': 'memory'
 }
 
-/** ?tab= 允许传内部 name(course)也允许传标签名(课程表) */
-function resolveTabName(tab) {
-  if (typeof tab !== 'string') return ''
-
-  const value = tab.trim()
-  if (!value) return ''
-  if (Object.values(TAB_NAME_BY_LABEL).includes(value)) return value
-
-  return TAB_NAME_BY_LABEL[value] || ''
+/** 内部 name -> 标签名:URL ?tab= 里存中文标签,链接复制给别人也能看懂 */
+const TAB_LABEL_BY_NAME = {
+  course: '课程表',
+  rest: '休息时间',
+  stats: '统计',
+  memory: 'AI 对我的了解'
 }
 
-/** 按 ?tab= 定位页签(新用户引导第 2 步「去填课表」会带 ?tab=课程表 跳过来) */
+/** 默认 Tab:URL 没带 ?tab= 或带了非法值时都回到它 */
+const DEFAULT_TAB = 'course'
+
+/** ?tab= 允许传内部 name(course)也允许传标签名(课程表);非法值一律回退到课程表 */
+function resolveTabName(tab) {
+  if (typeof tab !== 'string') return DEFAULT_TAB
+
+  const value = tab.trim()
+  if (Object.values(TAB_NAME_BY_LABEL).includes(value)) return value
+
+  return TAB_NAME_BY_LABEL[value] || DEFAULT_TAB
+}
+
+/** 把当前 Tab 同步进 URL 的 ?tab=(replace,不额外产生历史记录) */
+function syncTabToQuery(name) {
+  const label = TAB_LABEL_BY_NAME[name]
+  if (!label || route.query.tab === label) return
+
+  router.replace({ query: { ...route.query, tab: label } })
+}
+
+/**
+ * 按 ?tab= 定位页签。
+ * 新用户引导第 2 步「去填课表」会带 ?tab=课程表 跳过来;刷新 / 浏览器前进后退也走这里。
+ */
 function applyTabFromQuery() {
   const name = resolveTabName(route.query.tab)
-  if (!name || name === activeTab.value) return
+  if (name === activeTab.value) return
 
   activeTab.value = name
   // 统计 / AI 对我的了解是懒加载的,程序化切过去也要补一次数据

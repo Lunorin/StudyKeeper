@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ChatDotRound } from '@element-plus/icons-vue'
 import { chatStream } from '../api/ai'
@@ -9,6 +9,9 @@ import { showError } from '../utils/error'
 
 /** 进入页面时最多拉多少条历史 */
 const HISTORY_LIMIT = 50
+
+/** 输入框草稿存在 localStorage 里的 key */
+const DRAFT_KEY = 'chat_draft'
 
 /** 快捷操作:label 是按钮文案,message 是点击后直接发送的内容(写死的 4 条,不做成可配置) */
 const QUICK_ACTIONS = [
@@ -33,6 +36,39 @@ const historyLoading = ref(false)
 const messageAreaRef = ref(null)
 /** 消息区底部的哨兵元素,用来 scrollIntoView */
 const bottomRef = ref(null)
+
+/**
+ * 读草稿:进页面时把上次没发出去的半截话填回输入框。
+ * 只存文本,不存其他状态;隐私模式下 localStorage 可能直接抛错,这里吞掉,不影响聊天。
+ */
+function restoreDraft() {
+  try {
+    const draft = localStorage.getItem(DRAFT_KEY)
+    if (draft) {
+      input.value = draft
+    }
+  } catch {
+    // localStorage 不可用(如隐私模式)时静默跳过
+  }
+}
+
+/** 存草稿:内容为空时删掉 key,不留空串 */
+function saveDraft(text) {
+  try {
+    if (text) {
+      localStorage.setItem(DRAFT_KEY, text)
+    } else {
+      localStorage.removeItem(DRAFT_KEY)
+    }
+  } catch {
+    // localStorage 不可用(如隐私模式)时静默跳过
+  }
+}
+
+/** 输入框内容变化就同步草稿,刷新 / 切到别的页面再回来能恢复 */
+watch(input, (value) => {
+  saveDraft(value)
+})
 
 /** 滚动到消息区底部 */
 async function scrollToBottom() {
@@ -67,7 +103,10 @@ async function loadHistory() {
   }
 }
 
-onMounted(loadHistory)
+onMounted(() => {
+  restoreDraft()
+  loadHistory()
+})
 
 /** 当前流式请求的控制器:组件卸载时用它中断请求 */
 let streamController = null
@@ -186,6 +225,8 @@ function handleSend() {
     return
   }
   input.value = ''
+  // 发送成功后草稿就没用了,清掉避免下次进来又被填回输入框
+  saveDraft('')
   sendMessage(text)
 }
 

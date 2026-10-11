@@ -33,7 +33,8 @@ import java.util.Locale;
  *       —— 供 /api/memory 三个接口让用户自己查看、补充、删除记忆（不可编辑、不批量删）。</li>
  * </ul>
  * <p>
- * 调用时机：AiService.chat 落库完 chat_message 之后调 {@link #extractAndSave(Long, String, String)}。
+ * 调用时机：AiService 的两条聊天链路（非流式 chat 与流式 streamChat）落库完 chat_message 之后都会调
+ * {@link #extractAndSave(Long, String, String)}。
  * 方法是 @Async（线程池 memoryExtractExecutor），立刻返回，不阻塞这轮聊天；
  * 提炼失败只打日志 —— 绝不影响聊天主流程，也不会回滚已经落库的对话（异步线程不在聊天事务里）。
  * <p>
@@ -48,8 +49,8 @@ public class MemoryService {
     /** Python 侧接口路径：用户画像记忆提炼（只提炼，不落库） */
     private static final String EXTRACT_MEMORY_PATH = "/ai/extract-memory";
 
-    /** 用户消息短于该长度就不提炼：「嗯」「好的」这类没有信息量 */
-    private static final int MIN_MESSAGE_LENGTH = 5;
+    /** 用户消息短于该长度就不提炼（只挡「嗯」「哦」这类单字）：阈值定 2 是为了留住「考六级」这种 3 字但有信息量的话 */
+    private static final int MIN_MESSAGE_LENGTH = 2;
 
     /** 纯寒暄白名单：整句（去掉空白与标点、转小写后）只由这些词组成时跳过 */
     private static final List<String> GREETING_WORDS = List.of("你好", "在吗", "嗨", "哈喽", "hi", "hello");
@@ -177,7 +178,7 @@ public class MemoryService {
     /**
      * 规则过滤：这类消息不值得花一次模型调用。
      * <ul>
-     *   <li>去掉首尾空白后长度 &lt; 5（「嗯」「好的」）</li>
+     *   <li>去掉首尾空白后长度 &lt; 2（「嗯」「哦」）</li>
      *   <li>整句只由打招呼的词组成（「你好」「在吗？」「hi」「hello」「你好你好」）</li>
      * </ul>
      */
