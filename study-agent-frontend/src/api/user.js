@@ -30,6 +30,22 @@ export function updateProfile(data) {
 }
 
 /**
+ * 切换 AI 角色(需要 token)
+ * PUT /api/user/persona
+ *
+ * 说明:角色单独一个接口,不和资料接口混在一起 —— 它是固定白名单取值,校验规则与资料字段完全不同。
+ * 白名单只有 3 个:**default(默认)/ zeng_guofan(曾国藩)/ truth_doctor(真理医生)**,
+ * 传其它值后端返回 400「无效的 persona」,空值返回 400「persona 不能为空」。
+ * 人格文案不在这里,也不在 Java 侧,而在 AI 服务的 app/services/personas.py。
+ *
+ * @param {{ persona: string }} data persona 必须是上面 3 个值之一(后端 trim 后比较,大小写敏感)
+ * @returns {Promise<object>} 返回更新后的完整资料(结构同 getProfile,persona 是其中一项)
+ */
+export function updatePersona(data) {
+  return request.put('/user/persona', data)
+}
+
+/**
  * 保存通知开关(需要 token)
  * PUT /api/user/notifications
  *

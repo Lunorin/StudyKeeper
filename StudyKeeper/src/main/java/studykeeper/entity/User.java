@@ -62,6 +62,17 @@ public class User {
      */
     private Integer onboarded;
 
+    /**
+     * AI 角色（persona）：决定聊天时 system prompt 开头的「人格设定」段，只允许
+     * default / zeng_guofan / truth_doctor 三个值（白名单在 {@code UserService.PERSONAS}）。
+     * <p>
+     * 列由 {@code ALTER TABLE user ADD COLUMN persona VARCHAR(50) DEFAULT 'default';} 加出：
+     * 老用户由 DEFAULT 统一填成 'default'，注册流程不显式写这一列（MyBatis-Plus insert 跳过 null 字段）
+     * → 新用户也拿到库里的默认值。**取值合法性只在写入口（PUT /api/user/persona）校验**；
+     * 读的时候遇到 NULL / 脏值由使用方兜底（{@code AiService.resolvePersona} / {@code UserService.toPersona}）。
+     */
+    private String persona;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

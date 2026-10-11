@@ -18,8 +18,10 @@ import {
 import { getTodayStats, getTrendStats, getWeekStats } from '../api/stats'
 import { createMemory, deleteMemory, listMemories } from '../api/memory'
 import { parseCourse } from '../api/ai'
+import { updatePersona } from '../api/user'
+import { DEFAULT_PERSONA, patchUserInfo, userInfo } from '../stores/user'
 import { showError } from '../utils/error'
-import { Calendar, Histogram, MagicStick, Plus, Sunny } from '@element-plus/icons-vue'
+import { Calendar, Check, Histogram, MagicStick, Plus, Sunny } from '@element-plus/icons-vue'
 
 /** 星期数字 -> 中文,下标 0 对应 1(周一) */
 const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -27,7 +29,7 @@ const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 /** 周几切换按钮 */
 const dayOptions = WEEK_LABELS.map((label, index) => ({ value: index + 1, label: `周${label}` }))
 
-/** 当前 Tab(内部 name:course/rest/stats/memory;由 URL ?tab= 决定,见 applyTabFromQuery / syncTabToQuery) */
+/** 当前 Tab(内部 name:course/rest/stats/memory/persona;由 URL ?tab= 决定,见 applyTabFromQuery / syncTabToQuery) */
 const activeTab = ref('course')
 
 const route = useRoute()
@@ -616,7 +618,8 @@ const TAB_NAME_BY_LABEL = {
   '课程表': 'course',
   '休息时间': 'rest',
   '统计': 'stats',
-  'AI 对我的了解': 'memory'
+  'AI 对我的了解': 'memory',
+  'AI 角色': 'persona'
 }
 
 /** 内部 name -> 标签名:URL ?tab= 里存中文标签,链接复制给别人也能看懂 */
@@ -624,7 +627,8 @@ const TAB_LABEL_BY_NAME = {
   course: '课程表',
   rest: '休息时间',
   stats: '统计',
-  memory: 'AI 对我的了解'
+  memory: 'AI 对我的了解',
+  persona: 'AI 角色'
 }
 
 /** 默认 Tab:URL 没带 ?tab= 或带了非法值时都回到它 */
@@ -833,6 +837,62 @@ async function handleMemoryDelete(memory) {
     await loadMemories(false)
   } catch (error) {
     showError(error)
+  }
+}
+
+/* ==================== AI 角色 Tab(persona) ==================== */
+
+/**
+ * 3 个预设角色卡片的展示文案。
+ * id 必须与后端白名单一致(UserService.PERSONAS:default / zeng_guofan / truth_doctor),
+ * 名字 / 副标题 / 描述 / 示例话术只是设置页的展示文案,真正的人格设定在 AI 服务的 personas.py;
+ * 第一版只做这 3 个预设 —— 不支持自定义角色,也不做角色预览(点卡片直接切换)。
+ */
+const PERSONA_OPTIONS = [
+  {
+    id: DEFAULT_PERSONA,
+    name: '默认',
+    subtitle: '温和的学习助手',
+    description: '鼓励为主，语气轻快，像朋友一样陪伴你学习',
+    quote: '你今天已经很努力了，休息一下再来'
+  },
+  {
+    id: 'zeng_guofan',
+    name: '曾国藩',
+    subtitle: '晚清名臣 · 督学老师',
+    description: '稳重克制，用“立志、有识、有恒”教你打基础',
+    quote: '先别想太远，就做眼前这一题'
+  },
+  {
+    id: 'truth_doctor',
+    name: '真理医生',
+    subtitle: '博识学会学者',
+    description: '犀利毒舌但不伤人，逼你独立思考',
+    quote: '恭喜你，又一次把‘明天开始’当成了学习方法'
+  }
+]
+
+/** 切换角色请求中(期间再点卡片直接忽略,避免连点发出重复请求) */
+const personaSaving = ref(false)
+
+/** 当前选中的角色 id:store 里是空值(资料还没拉到 / 后端没回)时按「默认」算 */
+const selectedPersona = computed(() => userInfo.value.persona || DEFAULT_PERSONA)
+
+/** 点卡片直接切换角色:PUT /api/user/persona,成功后同步 store 并提示 */
+async function handlePersonaSelect(option) {
+  // 已经选中的卡片不重复请求
+  if (personaSaving.value || option.id === selectedPersona.value) return
+
+  personaSaving.value = true
+  try {
+    const data = await updatePersona({ persona: option.id })
+    // 后端返回更新后的完整资料(含 persona);万一没回该字段,就用点中的 id 兜底,保证卡片立刻切过去
+    patchUserInfo({ persona: data?.persona || option.id })
+    ElMessage.success(`已切换到${option.name}`)
+  } catch (error) {
+    showError(error)
+  } finally {
+    personaSaving.value = false
   }
 }
 
@@ -1225,6 +1285,35 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
                 </div>
               </div>
             </el-card>
+          </div>
+        </el-tab-pane>
+
+        <!-- AI 角色:本步实现(3 个预设角色卡片,点卡片直接切换;原型没有这个 Tab) -->
+        <el-tab-pane label="AI 角色" name="persona">
+          <div class="persona-intro">选择你的督学老师，聊天风格会不同</div>
+
+          <div class="persona-grid">
+            <button
+              v-for="option in PERSONA_OPTIONS"
+              :key="option.id"
+              type="button"
+              class="persona-card"
+              :class="{ 'is-active': option.id === selectedPersona }"
+              :disabled="personaSaving"
+              @click="handlePersonaSelect(option)"
+            >
+              <el-icon v-if="option.id === selectedPersona" class="persona-check">
+                <Check />
+              </el-icon>
+
+              <div class="persona-head">
+                <span class="persona-name">{{ option.name }}</span>
+                <span class="persona-subtitle">{{ option.subtitle }}</span>
+              </div>
+
+              <div class="persona-desc">{{ option.description }}</div>
+              <div class="persona-quote">“{{ option.quote }}”</div>
+            </button>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -1975,6 +2064,99 @@ watch(() => route.query.tab, applyTabFromQuery, { immediate: true })
 
 .memory-actions :deep(.el-button + .el-button) {
   margin-left: 0;
+}
+
+/* ==================== AI 角色 Tab(3 个预设角色卡片) ==================== */
+/* 顶部说明:一行小灰字,和「AI 提示条」同一档次 */
+.persona-intro {
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* 卡片网格:等宽 + 窗口窄了自动换行(3 个角色一行放不下就掉到下一行) */
+.persona-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+/* 卡片本体:白底 + 灰描边 + 8px 圆角,整块可点;用 <button> 是为了键盘也能操作,这里把按钮默认样式清掉 */
+.persona-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* 相对定位:右上角的勾绝对定位在卡片里 */
+  position: relative;
+  padding: 18px;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+/* 悬停:描边变深(与原型 hover 用 --border-strong 一致) */
+.persona-card:hover {
+  border-color: var(--border-strong);
+}
+
+.persona-card:disabled {
+  cursor: default;
+}
+
+/* 选中态:道奇蓝描边 + 淡蓝底 + 右上角勾 */
+.persona-card.is-active {
+  border-color: var(--dodger-blue);
+  background: var(--el-color-primary-light-9);
+}
+
+/* 右上角选中标记 */
+.persona-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 16px;
+  color: var(--dodger-blue);
+}
+
+/* 顶部:名字 + 副标题上下两行;右侧留出勾的位置,长名字不会顶到它 */
+.persona-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 20px;
+}
+
+.persona-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.persona-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 中部:描述 */
+.persona-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* 底部:示例话术(灰色斜体小字,引号写在模板里) */
+.persona-quote {
+  margin-top: 2px;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text-muted);
 }
 </style>
 

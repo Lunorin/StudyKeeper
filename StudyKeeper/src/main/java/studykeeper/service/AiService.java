@@ -30,7 +30,9 @@ import studykeeper.dto.CourseDTO;
 import studykeeper.dto.RestTimeDTO;
 import studykeeper.dto.TaskItem;
 import studykeeper.entity.Task;
+import studykeeper.entity.User;
 import studykeeper.entity.UserMemory;
+import studykeeper.mapper.UserMapper;
 import studykeeper.mapper.UserMemoryMapper;
 
 import java.io.BufferedReader;
@@ -58,7 +60,8 @@ import java.util.Map;
  * <p>
  * chat：查出今日任务、今日课程表、今日休息时段、今日空档（复用 /ai/plan 的算法）与用户画像记忆（user_memory，每类最多 3 条）当上下文、
  * 从 chat_message 查出该用户最近 20 条当历史（不再用前端传的 history）
- * → 连 message / history 一起 POST 给 Python → 拿回 reply 与 toolCalls → 按工具名分派到 TaskService
+ * → 连 message / history / persona（AI 角色，从 user 表现查）一起 POST 给 Python → 拿回 reply 与 toolCalls →
+ * 按工具名分派到 TaskService
  * 真正改库 → 把这一轮的 user / assistant 两条消息落库 → 异步交给 MemoryService 提炼用户画像记忆
  * （失败只打日志，不影响本次回复）→ 返回 { reply, affectedTaskIds }；
  * 整个 chat 在一个事务里，任一工具失败或落库失败则前面几步的改动一起回滚。
@@ -164,6 +167,14 @@ public class AiService {
      */
     private static final int MAX_MEMORIES_PER_CATEGORY = 3;
 
+    /**
+     * AI 角色（persona）的兜底值：user.persona 为 NULL / 空白（老数据、脏数据）时用它。
+     * <p>
+     * 与 user 表这一列的默认值、Python 侧 ChatRequest.persona 的默认值、UserService.DEFAULT_PERSONA
+     * 四处口径一致；都只有一行，各写一份（与 AI_SERVICE_ERROR_MESSAGE 一样暂不抽公共类）。
+     */
+    private static final String DEFAULT_PERSONA = "default";
+
     /** 工具参数里的时间：宽容一点，接受 "9:00" 与 "09:00"（模型不一定会补零） */
     private static final DateTimeFormatter TOOL_TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
 
@@ -182,6 +193,9 @@ public class AiService {
     /** 用户画像记忆（user_memory）：本类只读（查出来注入 chat 的 context），写由 MemoryService 负责 */
     private final UserMemoryMapper userMemoryMapper;
 
+    /** user 表：本类只读 persona（AI 角色）一格，不写 user；查不到 / NULL / 空白都按 {@link #DEFAULT_PERSONA} 算 */
+    private final UserMapper userMapper;
+
     private final RestTemplate restTemplate;
 
     /**
@@ -194,7 +208,8 @@ public class AiService {
 
     public AiService(CourseService courseService, RestTimeService restTimeService, TaskService taskService,
                      ChatService chatService, MemoryService memoryService,
-                     UserMemoryMapper userMemoryMapper, RestTemplate aiRestTemplate, ObjectMapper objectMapper,
+                     UserMemoryMapper userMemoryMapper, UserMapper userMapper,
+                     RestTemplate aiRestTemplate, ObjectMapper objectMapper,
                      @Value("${ai.service.base-url}") String baseUrl) {
         this.courseService = courseService;
         this.restTimeService = restTimeService;
@@ -202,6 +217,7 @@ public class AiService {
         this.chatService = chatService;
         this.memoryService = memoryService;
         this.userMemoryMapper = userMemoryMapper;
+        this.userMapper = userMapper;
         this.restTemplate = aiRestTemplate;
         this.objectMapper = objectMapper;
         // 去掉结尾的 "/"，避免拼出 http://host//ai/plan
@@ -262,7 +278,7 @@ public class AiService {
     }
 
     /**
-     * 对话：把用户这句话（连同库里的历史、今日任务 / 课程表 / 休息时段）交给 Python，拿回回复与工具调用意图，
+     * 对话：把用户这句话（连同库里的历史、今日任务 / 课程表 / 休息时段与该用户的 AI 角色 persona）交给 Python，拿回回复与工具调用意图，
      * 再在本服务执行工具，最后把这一轮的 user / assistant 两条消息落库。
      * <p>
      * 历史不再由前端传：查的是 chat_message 里该用户最近 {@link #RECENT_HISTORY_COUNT} 条（正序），
@@ -285,6 +301,8 @@ public class AiService {
         // 2. 组装请求体：history 从库里查（前端传什么都不看），context（今日任务 / 课程表 / 休息时段）现查
         AiChatRequest request = new AiChatRequest();
         request.setMessage(content);
+        // AI 角色：从 user 表现查（没设置过 / 脏值按 "default"），Python 据它决定 system prompt 的人格设定段
+        request.setPersona(resolvePersona(userId));
         request.setHistory(buildHistory(userId));
         request.setContext(buildContext(userId));
 
@@ -353,6 +371,10 @@ public class AiService {
             String content = requireMessage(message);
             AiChatRequest request = new AiChatRequest();
             request.setMessage(content);
+            // 与非流式一致：AI 角色也从 user 表现查（没设置过 / 脏值按 "default"）
+            request.setPersona(resolvePersona(userId));
+        // AI 角色：从 user 表现查（没设置过 / 脏值按 "default"），Python 据它决定 system prompt 的人格设定段
+        request.setPersona(resolvePersona(userId));
             // 与非流式完全一致：history 由 Java 查库后传给 Python（两条链路都不看前端传的历史）
             request.setHistory(buildHistory(userId));
             request.setContext(buildContext(userId));
@@ -396,6 +418,20 @@ public class AiService {
             throw new IllegalArgumentException("message 长度不能超过 " + MAX_MESSAGE_LENGTH + " 字");
         }
         return message.trim();
+    }
+
+    /**
+     * 取当前用户的 AI 角色（persona）：从 user 表现查，查不到 / NULL / 空白一律回退 {@link #DEFAULT_PERSONA}。
+     * <p>
+     * 这里**不做取值合法性校验**：写入口（PUT /api/user/persona）已经把过关，Python 侧对未知值也只会
+     * 回退默认人格（personas.get_persona_prompt），所以本方法只保证「永远给 Python 一个非空字符串」。
+     * <p>
+     * 与非流式 / 流式共用：两条链路各查一次（chat 在事务里，多这一条 selectById 可忽略）。
+     */
+    private String resolvePersona(Long userId) {
+        User user = userMapper.selectById(userId);
+        String persona = user == null ? null : user.getPersona();
+        return persona == null || persona.isBlank() ? DEFAULT_PERSONA : persona.trim();
     }
 
     /**

@@ -12,18 +12,20 @@ import studykeeper.common.UsernameExistsException;
 import studykeeper.dto.OnboardingStatusDTO;
 import studykeeper.dto.SubmitFeedbackRequest;
 import studykeeper.dto.UpdateNotificationsRequest;
+import studykeeper.dto.UpdatePersonaRequest;
 import studykeeper.dto.UpdateProfileRequest;
 import studykeeper.dto.UserProfileDTO;
 import studykeeper.interceptor.JwtInterceptor;
 import studykeeper.service.UserService;
 
 /**
- * 用户资料接口（右上角头像那套）：资料、通知设置、意见反馈，外加新用户引导的两个状态接口。
+ * 用户资料接口（右上角头像那套）：资料、通知设置、AI 角色（persona）、意见反馈，外加新用户引导的两个状态接口。
  * <p>
  * 只做这几件事：不涉及改密码、不做头像文件上传（前端直接传 emoji 或 base64 字符串）、
  * 反馈**只提交**（不做列表查询 / 已读未读 / 回复），引导**只记完成 / 未完成**
  * （引导内容与走到第几步都是前端的事）。
- * 手机号与邮箱的绑定就直接走 {@link #updateProfile}，不另开接口。
+ * 手机号与邮箱的绑定就直接走 {@link #updateProfile}，不另开接口；AI 角色（persona）单独一个接口
+ * （{@link #updatePersona}），因为它是固定白名单取值、与资料字段的校验规则完全不同。
  * <p>
  * 这几个路径都被 {@code JwtInterceptor} 的 `/api/**` 覆盖，**{@code WebConfig} 不用改**：
  * 两个引导接口和资料接口一样需要 token，userId 一律从 token 取（`@RequestAttribute`），
@@ -84,6 +86,28 @@ public class UserController {
             return Result.error(404, "用户不存在");
         }
         return Result.success(updated);
+    }
+
+    /**
+     * 切换当前用户的 AI 角色（PUT /api/user/persona）。
+     * <p>
+     * 请求体只有 persona 一个字段，取值必须是 default / zeng_guofan / truth_doctor
+     * （校验在 UserService 里做：非法值 400「无效的 persona」，空值 400「persona 不能为空」）。
+     * 成功返回**更新后**的完整资料（与 profile 接口同一个 UserProfileDTO，persona 是其中一项），
+     * 前端切完角色可以直接拿它刷新本地资料；用户不存在返回 404。
+     */
+    @PutMapping("/persona")
+    public Result<UserProfileDTO> updatePersona(@RequestAttribute(JwtInterceptor.USER_ID_ATTRIBUTE) Long userId,
+                                                @RequestBody UpdatePersonaRequest request) {
+        try {
+            UserProfileDTO updated = userService.updatePersona(userId, request.getPersona());
+            if (updated == null) {
+                return Result.error(404, "用户不存在");
+            }
+            return Result.success(updated);
+        } catch (IllegalArgumentException e) {
+            return Result.error(400, e.getMessage());
+        }
     }
 
     /**

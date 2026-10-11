@@ -156,6 +156,7 @@ CREATE TABLE `user` (
   `notify_daily_report` tinyint DEFAULT '0',
   `notify_sound` tinyint DEFAULT '1',
   `onboarded` tinyint DEFAULT '0',
+  `persona` varchar(50) DEFAULT 'default',
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `uk_email` (`email`)

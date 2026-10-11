@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import studykeeper.common.UsernameExistsException;
 import studykeeper.dto.SubmitFeedbackRequest;
 import studykeeper.dto.UpdateNotificationsRequest;
+import studykeeper.dto.UpdatePersonaRequest;
 import studykeeper.dto.UpdateProfileRequest;
 import studykeeper.dto.UserProfileDTO;
 import studykeeper.entity.Feedback;
@@ -17,19 +18,22 @@ import studykeeper.mapper.UserMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * 用户资料 + 通知设置 + 意见反馈 + 新用户引导状态业务层。
  * <p>
- * 对应接口：GET / PUT /api/user/profile（资料）、PUT /api/user/notifications（通知设置）、
+ * 对应接口：GET / PUT /api/user/profile（资料）、PUT /api/user/notifications（通知设置）、PUT /api/user/persona（AI 角色）、
  * GET /api/user/onboarding-status（引导状态）、POST /api/user/onboarding-complete（标记引导完成）、
  * POST /api/user/feedback（意见反馈）。
  * <p>
- * 边界：资料只读写 user 表里 nickname / username / avatar / phone / email 这几个字段，
+ * 边界：资料只读写 user 表里 nickname / username / avatar / phone / email / persona 这几个字段，
  * **不碰 password**（改密码单独做），也**不管注册 / 登录**（那是 AuthService 的事）；
  * 反馈只往 feedback 表插一条，**不做列表查询 / 不做已读未读 / 不做回复**（docs/api.md §12.4）；
- * 引导**只记「完成 / 未完成」一格**（user.onboarded），不做步骤记录、不做引导内容（那是前端的事）。
+ * 引导**只记「完成 / 未完成」一格**（user.onboarded），不做步骤记录、不做引导内容（那是前端的事）；
+ * AI 角色（persona）**只做取值白名单校验**（default / zeng_guofan / truth_doctor），
+ * 不存人格文案、不做人格管理（人格内容在 Python 侧 app/services/personas.py）。
  */
 @Service
 public class UserService {
@@ -64,6 +68,23 @@ public class UserService {
 
     /** feedback.content 是 TEXT，接口层限 5000 字（反馈是短文本，不需要更长） */
     private static final int MAX_FEEDBACK_LENGTH = 5000;
+
+    /**
+     * 默认人格：user.persona 的列默认值，也是用户没设置过 / 库里是脏值时统一按它算的那个值。
+     * <p>
+     * 与 AiService.DEFAULT_PERSONA、Python 侧 ChatRequest.persona 的默认值三处口径一致；
+     * 都只有一行，各写一份（与 AI_SERVICE_ERROR_MESSAGE、jsonEntity 的做法一致，暂不抽公共类）。
+     */
+    private static final String DEFAULT_PERSONA = "default";
+
+    /**
+     * AI 角色（persona）白名单：与 Python 侧 app/services/personas.py 的 3 个人格一一对应 ——
+     * default（默认）/ zeng_guofan（曾国藩）/ truth_doctor（直言不讳的大夫）。
+     * <p>
+     * 只有这 3 个值能写进 user.persona，其它一律 400。Python 侧**不校验**取值（未知值只回退默认人格），
+     * 所以这里是唯一的把关点。
+     */
+    private static final List<String> PERSONAS = List.of(DEFAULT_PERSONA, "zeng_guofan", "truth_doctor");
 
     /** 通知开关在库里的两个取值（TINYINT） */
     private static final int NOTIFY_ON = 1;
@@ -169,6 +190,28 @@ public class UserService {
     }
 
     /**
+     * 切换当前用户的 AI 角色（PUT /api/user/persona）。
+     * <p>
+     * 只改 user.persona 一格：入参必须是 {@link #PERSONAS} 里的 3 个值之一（trim 后比较，大小写敏感），
+     * 非法值抛 {@link IllegalArgumentException}（由 Controller 转成 400）；用户不存在返回 null
+     * （由 Controller 转成 404，与 updateProfile / updateNotifications 同一口径）。
+     * <p>
+     * 与另外两个写接口同一套路：非 null 字段整体写回（含没改的原值），**不碰 password**。
+     */
+    public UserProfileDTO updatePersona(Long userId, String persona) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            return null;
+        }
+
+        user.setPersona(requirePersona(persona));
+        user.setUpdatedAt(LocalDateTime.now());
+
+        userMapper.updateById(user);
+        return toDTO(user);
+    }
+
+    /**
      * 查当前用户是否已完成新用户引导（GET /api/user/onboarding-status）。
      * <p>
      * 只读 user.onboarded 一格：库里是 TINYINT（1 = 已完成 / 0 = 未完成），这里转成 Boolean 给前端。
@@ -219,6 +262,23 @@ public class UserService {
     }
 
     /**
+     * 校验 persona：只接受 {@link #PERSONAS} 里的 3 个值（先 trim，再逐字比较，大小写敏感）。
+     * <p>
+     * null / 空串 / 未知值都抛 {@link IllegalArgumentException}（由 Controller 转成 400）——
+     * 「未知值回退默认人格」只发生在读侧（{@link #toPersona} / AiService.resolvePersona），写侧必须拦住。
+     */
+    private String requirePersona(String persona) {
+        String value = persona == null ? "" : persona.trim();
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException("persona 不能为空");
+        }
+        if (!PERSONAS.contains(value)) {
+            throw new IllegalArgumentException("无效的 persona");
+        }
+        return value;
+    }
+
+    /**
      * 校验反馈内容：不能为空 / 纯空白，trim 后最长 5000 字。
      */
     private String requireFeedbackContent(String content) {
@@ -234,7 +294,7 @@ public class UserService {
     }
 
     /**
-     * 实体 → DTO。只取资料字段 + 引导标记 + 4 个通知开关，password 永远不出现在响应里；
+     * 实体 → DTO。只取资料字段（含 persona）+ 引导标记 + 4 个通知开关，password 永远不出现在响应里；
      * 通知开关与引导标记都在这里由 Integer（TINYINT 1/0）转成 Boolean，**转换只在这一处做**。
      */
     private UserProfileDTO toDTO(User user) {
@@ -242,7 +302,8 @@ public class UserService {
                 user.getAvatar(), user.getPhone(), user.getEmail(),
                 toOnboarded(user.getOnboarded()),
                 toBoolean(user.getNotifyTaskReminder()), toBoolean(user.getNotifyCourseReminder()),
-                toBoolean(user.getNotifyDailyReport()), toBoolean(user.getNotifySound()));
+                toBoolean(user.getNotifyDailyReport()), toBoolean(user.getNotifySound()),
+                toPersona(user.getPersona()));
     }
 
     /**
@@ -259,6 +320,15 @@ public class UserService {
      */
     private Boolean toBoolean(Integer flag) {
         return flag == null ? null : flag != NOTIFY_OFF;
+    }
+
+    /**
+     * persona：NULL / 空白统一兜底成 {@link #DEFAULT_PERSONA}，保证响应里永远是非空字符串
+     * （与 AiService.resolvePersona 同一口径）。列有 DEFAULT 'default'，正常查出来不会是 NULL，
+     * 这里兜的是「老数据被显式写成 NULL / 脏数据」的情况。
+     */
+    private String toPersona(String persona) {
+        return persona == null || persona.isBlank() ? DEFAULT_PERSONA : persona.trim();
     }
 
     /**

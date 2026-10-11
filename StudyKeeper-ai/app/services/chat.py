@@ -11,10 +11,15 @@
   工具调用攒齐后一次性给出；同样不执行工具、不落库、不缓存。
 
 对外入口：
-    chat(message, history, context) -> {"reply": str,
+    chat(message, history, context, persona_id="default") -> {"reply": str,
                                         "toolCalls": [{"name": str, "arguments": dict}, ...]}
-    chat_stream(message, history, context) -> 逐条 yield 事件（delta / tool_calls / end），
-                                       /ai/chat/stream 用；事件结构见函数注释
+    chat_stream(message, history, context, persona_id="default") -> 逐条 yield 事件
+                                       （delta / tool_calls / end），/ai/chat/stream 用；
+                                       事件结构见函数注释
+
+persona_id 决定 system prompt 开头的「人格设定」段（见 app/services/personas.py）：
+default / zeng_guofan / truth_doctor；未知值回退 default。它只替换人格段，
+不影响后面的通用规则与数据段，也不改变响应格式。
 
 context 由调用方（Java 侧）现查后传进来，缺字段一律按空列表处理：
     todayTasks      今天已有的任务
@@ -30,7 +35,7 @@ context 由调用方（Java 侧）现查后传进来，缺字段一律按空列�
 「对话式排任务」：用户问「我今天该怎么安排」「我想复习雅思怎么做」这类规划问题时，
 模型先按 availableSlots 给出 2-5 条带具体时间段的建议，并问一句「要加吗」；用户同意后才调
 add_task（每条建议调一次），要改就重新给一版完整建议再问一次（此时不调工具），用户拒绝则不调工具。
-这些规则全部写在 SYSTEM_PROMPT 里，Python 侧不做任何配合逻辑：不解析建议、不校验建议是否落在
+这些规则全部写在 BEHAVIOR_PROMPT 里，Python 侧不做任何配合逻辑：不解析建议、不校验建议是否落在
 空档内、也不缓存「上一版建议」——上一版建议靠调用方通过 history 带回来。
 
 system prompt 末尾还会带上「当前时间」（见 app/utils/time_context.py）：模型自己不知道现在几点，
@@ -38,9 +43,11 @@ system prompt 末尾还会带上「当前时间」（见 app/utils/time_context.
 """
 
 import json
+import sys
 
 from app.services import llm_client
 from app.services.llm_client import LLMError
+from app.services.personas import get_persona_prompt
 from app.services.tools import TOOLS
 from app.utils.time_context import now_text
 
@@ -101,8 +108,10 @@ PLANNING_RULES = (
 ).format(name=SLOTS_SECTION_NAME, empty=EMPTY_SLOTS_TEXT)
 
 
-SYSTEM_PROMPT = (
-    "你是学习监督助手，说话温和、简短（1-3 句），像朋友一样鼓励用户。\n"
+# 通用行为规则（所有 persona 共用）：能力说明 + 工具调用规则 + 对话式排任务规则。
+# 人格设定不在这里 —— 它由 personas.get_persona_prompt(persona_id) 提供，
+# 在 build_messages 里拼在 system prompt 最前面（替换，不与默认人格叠加）。
+BEHAVIOR_PROMPT = (
     "你能看到用户今天的任务列表、课程表、休息时段和可用空档（见下）。\n"
     "回答用户问题时可以参考这些信息：比如用户问「我几点有空」「什么时候背单词合适」，"
     "就结合课程表（上课时间）和休息时段来回答；用户提到上课 / 下课时间时，以课程表为准。\n"
@@ -213,22 +222,32 @@ def format_user_memories(user_memories):
     return "\n".join(lines)
 
 
-def build_messages(message, history, context):
-    """组装 messages：system（角色设定 + 今日任务 / 课程表 / 休息时段 / 可用空档
-    + 用户画像记忆 + 当前时间）→ history 原样带上 → 当前这句。"""
+def build_messages(message, history, context, persona_id="default"):
+    """组装 messages：system（人格设定 + 通用规则 + 今日任务 / 课程表 / 休息时段 / 可用空档
+    + 用户画像记忆 + 当前时间）→ history 原样带上 → 当前这句。
+
+    人格设定由 personas.get_persona_prompt(persona_id) 决定，只替换、不与默认人格叠加；
+    persona_id 未知 / None 时回退默认人格（合法性由 Java 侧校验，这里不校验）。
+    """
+    persona_prompt = get_persona_prompt(persona_id)
+    # 每次调用打一条调试日志：方便确认 Java 到底把哪个 persona 传了下来
+    print("[调试] persona = {}".format(persona_id), file=sys.stderr)
+
     today_tasks = (context or {}).get("todayTasks") or []
     today_courses = (context or {}).get("todayCourses") or []
     today_rest_times = (context or {}).get("todayRestTimes") or []
     available_slots = (context or {}).get("availableSlots") or []
     memories = format_user_memories((context or {}).get("userMemories") or [])
     system_content = (
-        "{prompt}\n\n"
+        "{persona}\n\n"
+        "{rules}\n\n"
         "用户今天的任务列表：\n{tasks}\n\n"
         "用户今天的课程表：\n{courses}\n\n"
         "用户今天的休息时段：\n{rests}\n\n"
         "{slots_title}{slots}"
     ).format(
-        prompt=SYSTEM_PROMPT,
+        persona=persona_prompt,
+        rules=BEHAVIOR_PROMPT,
         tasks=format_tasks(today_tasks),
         courses=format_courses(today_courses),
         rests=format_rest_times(today_rest_times),
@@ -291,9 +310,12 @@ def parse_tool_calls(raw_tool_calls):
     return calls
 
 
-def chat(message, history, context):
-    """对外入口：调模型 → 拆出 reply 与 toolCalls；两者都空时给一句兜底回复。"""
-    messages = build_messages(message, history, context)
+def chat(message, history, context, persona_id="default"):
+    """对外入口：调模型 → 拆出 reply 与 toolCalls；两者都空时给一句兜底回复。
+
+    persona_id 决定 system prompt 开头的人格设定（default / zeng_guofan / truth_doctor）。
+    """
+    messages = build_messages(message, history, context, persona_id)
     result = llm_client.chat_with_tools(messages, TOOLS)
 
     reply = (result.content or "").strip()
@@ -369,7 +391,7 @@ def first_delta(chunk):
     return getattr(choices[0], "delta", None)
 
 
-def chat_stream(message, history, context):
+def chat_stream(message, history, context, persona_id="default"):
     """对外入口（流式）：逐条 yield 事件，由 /ai/chat/stream 转成 SSE。
 
     yield 的三种事件：
@@ -379,14 +401,14 @@ def chat_stream(message, history, context):
         {"type": "end", "reply": "…"}       本轮结束，reply 是完整回复（已 trim）
 
     与非流式 chat() 的差别：
-    - 参数与 chat() 完全一样（message / history / context），messages 也共用 build_messages：
+    - 参数与 chat() 完全一样（message / history / context / persona_id），messages 也共用 build_messages：
       历史同样会带给模型 —— 否则模型看不到自己上一轮的建议，「好的」这种回答就无从对应；
     - 模型整轮什么都没说、也没想调工具时，补一句兜底文案（与 chat() 一致），
       并且先 delta 再 end，保证「客户端拼出来的文字」与 end.reply 一致；
     - 工具参数不是合法 JSON 时抛 LLMError，由路由层转成 error 事件 ——
       此时前面的 delta 已经发出去了，这是流式固有的特性（不做回撤）。
     """
-    messages = build_messages(message, history, context)
+    messages = build_messages(message, history, context, persona_id)
     accumulator = ToolCallAccumulator()
     parts = []
 

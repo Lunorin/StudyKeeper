@@ -47,4 +47,12 @@ public class UserProfileDTO {
 
     private Boolean notifySound;
 
+    /**
+     * AI 角色（persona）：default / zeng_guofan / truth_doctor，聊天接口据此决定 AI 用哪个人格。
+     * <p>
+     * 库里是 VARCHAR(50)，NULL / 空白由 Service 统一兜底成 'default'（{@code UserService.toPersona}），
+     * 所以前端拿到的**永远是一个非空字符串**；改它走 PUT /api/user/persona。
+     */
+    private String persona;
+
 }

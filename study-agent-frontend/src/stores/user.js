@@ -16,6 +16,13 @@ const DEFAULT_NOTIFY = {
   notifySound: true
 }
 
+/**
+ * 默认 AI 角色 id。
+ * 与后端三处口径一致:user.persona 的列默认值、UserService.DEFAULT_PERSONA、AI 服务 personas.py;
+ * 前端拿它当「没设置过 / 后端没回这个字段」时的兜底值(设置页的默认卡片也用它)。
+ */
+export const DEFAULT_PERSONA = 'default'
+
 /** 空资料:退出登录 / 拉取失败时用它兜底,模板里就不用到处判空 */
 const EMPTY_USER = {
   id: null,
@@ -24,6 +31,8 @@ const EMPTY_USER = {
   avatar: '',
   phone: '',
   email: '',
+  /** AI 角色:default / zeng_guofan / truth_doctor(切换走 api/user.js 的 updatePersona) */
+  persona: DEFAULT_PERSONA,
   /**
    * 新用户引导是否已完成。
    * null = 还不知道(资料还没拉到,由 App.vue 补一次 GET /user/onboarding-status);
@@ -68,6 +77,8 @@ export function clearUserInfo() {
  */
 export async function loadProfile() {
   const data = await getProfile()
-  setUserInfo(data)
+  // persona 跟着资料一起回来(列有默认值,正常不会是 null);这里再兜一次,
+  // 保证设置页拿到的永远是合法非空的角色 id,不用在模板里判空
+  setUserInfo({ ...data, persona: data?.persona || DEFAULT_PERSONA })
   return userInfo.value
 }

@@ -8,9 +8,9 @@ import java.util.List;
 /**
  * POST /ai/chat（Java → Python）的请求体。
  * 字段名与 Python 侧 Pydantic 模型 ChatRequest 完全一致（那边 extra="forbid"，
- * 多传一个字段立刻 422），所以这里只有 message / history / context 三个字段。
+ * 多传一个字段立刻 422），所以这里只有 message / history / context / persona 四个字段。
  * <p>
- * 三个字段都由 AiService 填充：message 来自前端（POST /api/ai/chat 的请求体），
+ * 四个字段都由 AiService 填充：message 来自前端（POST /api/ai/chat 的请求体）、persona 从 user 表现查（NULL → "default"），
  * history 从 chat_message 查（该用户最近 20 条，正序），context 里的今日任务 / 课程表 /
  * 休息时段 / 用户画像记忆 / 今日空档一律现查 —— 前端传来的 history / context 都不看。
  */
@@ -25,6 +25,19 @@ public class AiChatRequest {
 
     /** 上下文，放今日任务 / 课程表 / 休息时段 / 空档；Python 侧用它告诉模型「今天有哪些任务、哪些课、哪些休息、还剩哪些空档」 */
     private Context context = new Context();
+
+    /**
+     * AI 角色（persona）：default / zeng_guofan / truth_doctor，决定 Python 侧 system prompt 开头的
+     * 「人格设定」段（StudyKeeper-ai/app/services/personas.py）。
+     * <p>
+     * 由 AiService 从 user 表现查后填充（{@code AiService.resolvePersona}）：用户没设置过（NULL / 空白）
+     * 时填 {@code "default"}，所以这个字段**永远是三个合法值之一**（兜底值见字段默认值，与
+     * user.persona 列默认值、Python 侧 ChatRequest.persona 默认值三处口径一致）。
+     * <p>
+     * 字段名与 Python 侧 ChatRequest.persona 逐字一致（那边 extra="forbid"，改名会直接 422）；
+     * 取值合法性由 Java 侧写入口把关，Python 侧对未知值只会回退默认人格。
+     */
+    private String persona = "default";
 
     /**
      * 一条历史消息，对应 Python 侧 ChatMessage。

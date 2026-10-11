@@ -12,6 +12,7 @@ POST /ai/plan
 POST /ai/chat
     请求：{"message": "...",
            "history": [{"role": "user", "content": "..."}],
+           "persona": "default",
            "context": {"todayTasks": [{"id": 12, "title": "...", "status": "pending",
                                        "startTime": "19:00", "endTime": "19:50"}],
                        "todayCourses": [{"courseName": "高等数学", "startTime": "08:00",
@@ -23,6 +24,10 @@ POST /ai/chat
                        "userMemories": [{"category": "event", "content": "用户下周要考雅思"}]}}
     响应：{"reply": "...", "toolCalls": [{"name": "add_task", "arguments": {...}}]}
     工具调用只是模型的「意图」，本服务不执行它：执行、落库都在 Java 侧。
+    persona 是 AI 角色，决定 system prompt 开头的「人格设定」段（见 app/services/personas.py）：
+    default（默认学习助手）/ zeng_guofan（曾国藩）/ truth_doctor（真理医生）；
+    不传 / null / 未知值都按 default 处理。本服务不校验取值（合法性由 Java 侧把关），
+    只替换「人格设定」段，后面的通用规则与数据段不变，响应格式也不变。
     userMemories 是用户画像记忆（Java 侧查 user_memory 后传进来），用来让模型「认识」用户：
     非空时追加到 system prompt 末尾（按分类展示，并要求不要生硬罗列）；
     空数组时 system prompt 与不传这个字段完全一样。
@@ -35,7 +40,7 @@ POST /ai/chat
     （上一版建议靠调用方通过 history 带回来）。
 
 POST /ai/chat/stream
-    请求：与 /ai/chat 完全相同（message + history + context）；history 同样会带给模型 ——
+    请求：与 /ai/chat 完全相同（message + history + context + persona）；history 同样会带给模型 ——
           流式与非流式共用同一份 messages 组装逻辑，所以「用户同意上一轮建议」这类依赖历史的
           回答在流式下也成立。请求体不合法照样由 FastAPI 返回 422。
     响应：SSE（text/event-stream），每条以 "data: " 开头、以空行结尾，JSON 用
@@ -73,7 +78,7 @@ import json
 import re
 import sys
 from datetime import date
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -251,7 +256,11 @@ class ChatContext(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    """/ai/chat 的请求体；history 与 context 可以不传，也可以传空列表。"""
+    """/ai/chat 的请求体；history 与 context 可以不传，也可以传空列表。
+
+    persona 是 AI 角色（default / zeng_guofan / truth_doctor）：本服务不校验取值，
+    未知值在 personas.get_persona_prompt 里回退默认人格（合法性由 Java 侧把关）。
+    """
 
     model_config = ConfigDict(extra="forbid")       # 多传字段直接 422
 
@@ -259,6 +268,7 @@ class ChatRequest(BaseModel):
                          examples=["帮我把背单词挪到 20:00"])
     history: list[ChatMessage] = Field(default_factory=list, max_length=MAX_HISTORY)
     context: ChatContext = Field(default_factory=ChatContext)
+    persona: Optional[str] = "default"
 
     @field_validator("message")
     @classmethod
@@ -412,6 +422,7 @@ def ai_chat(payload: ChatRequest):
                 "userMemories": [memory.model_dump()
                                  for memory in payload.context.userMemories],
             },
+            persona_id=payload.persona,
         )
     except LLMError as exc:
         # 真实原因只写服务端日志，响应里不外泄
@@ -459,7 +470,7 @@ def ai_chat_stream(payload: ChatRequest):
 
     def event_stream():
         try:
-            for event in chat.chat_stream(payload.message, history, context):
+            for event in chat.chat_stream(payload.message, history, context, payload.persona):
                 yield sse_event(event)
         except LLMError as exc:
             # 真实原因只写服务端日志，响应里不外泄
