@@ -1329,7 +1329,18 @@ POST /ai/chat
       { "category": "event", "content": "用户下周要考雅思" },
       { "category": "preference", "content": "用户不喜欢超过 1 小时的任务" },
       { "category": "goal", "content": "用户想 3 个月刷完力扣 hot100" }
-    ]
+    ],
+    "isFirstMessageToday": true,
+    "yesterdaySummary": {
+      "date": "2026-10-14",
+      "total": 5,
+      "completed": 3,
+      "missed": 2,
+      "missedTasks": [
+        { "title": "背单词", "startTime": "07:30", "endTime": "08:00" },
+        { "title": "刷题", "startTime": "20:00", "endTime": "21:00" }
+      ]
+    }
   }
 }
 ```
@@ -1346,6 +1357,16 @@ POST /ai/chat
   「你对该用户的了解」（每条一行 `- [分类] 内容`，分类：habit=学习习惯 / emotion=情绪状态 /
   event=重要事件 / preference=偏好 / goal=长期目标，未知类别用英文原值），
   并要求「不要直接罗列，与当前对话无关不要硬扯」；空画像时 system prompt 与之前完全一致。
+- **主动监督（Step 1）新加的两个字段**，同样由 Java 侧现算，前端一律不用传：
+  - `isFirstMessageToday`（boolean）：今天（自然日 `00:00` 起）该用户还没发过 user 消息就是「今天第一条」
+    （查 `chat_message`，**不含正在处理的这一条**，所以两条链路都在落库前算），每次都给 `true` / `false`；
+  - `yesterdaySummary`（object / **null**）：昨天的完成情况 —— `date`（yyyy-MM-dd）、
+    `total`、`completed`（`status = 'done'`）、`missed`（`status = 'missed'`，或 `pending` 且已过计划结束时间）、
+    `missedTasks`（`title` / `startTime` / `endTime`，按开始时间从早到晚**最多 5 条**）；
+    **只在 `isFirstMessageToday = true` 时才有值**，其它时候 Java 传 `null`（每天主动提一次就够，省 token）；
+    昨天没任务时是 `total = 0` + `missedTasks = []`；三个计数都排除 `status = 'skipped'`（用户在今日页删掉的长期任务实例）；
+  - 这两个字段 **Python 侧下一步才用**：Java 这一步先算好、先发过去。Python 的 `ChatContext` 对多出来的字段是
+    **忽略**（只有顶层 `ChatRequest` 是 `extra="forbid"`），所以现在多传这两个字段**不会 422**、聊天逻辑一行没改。
 
 **响应：**
 

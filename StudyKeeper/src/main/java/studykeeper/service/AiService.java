@@ -29,9 +29,12 @@ import studykeeper.dto.AiPlanResponse;
 import studykeeper.dto.CourseDTO;
 import studykeeper.dto.RestTimeDTO;
 import studykeeper.dto.TaskItem;
+import studykeeper.entity.ChatMessage;
 import studykeeper.entity.Task;
 import studykeeper.entity.User;
 import studykeeper.entity.UserMemory;
+import studykeeper.mapper.ChatMessageMapper;
+import studykeeper.mapper.TaskMapper;
 import studykeeper.mapper.UserMapper;
 import studykeeper.mapper.UserMemoryMapper;
 
@@ -41,6 +44,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -168,6 +172,26 @@ public class AiService {
     private static final int MAX_MEMORIES_PER_CATEGORY = 3;
 
     /**
+     * task.status 的取值（与 TaskService 的常量、docs/api.md §0.6 一致）。
+     * <p>
+     * 本类**只读**这几个状态（算昨天的完成情况），**不写状态** —— 改状态一律走 TaskService。
+     * skipped 是用户在今日页删掉的长期任务实例（软删除），昨天的统计里直接按 SQL 排除。
+     */
+    private static final String TASK_STATUS_DONE = "done";
+    private static final String TASK_STATUS_PENDING = "pending";
+    private static final String TASK_STATUS_MISSED = "missed";
+    private static final String TASK_STATUS_SKIPPED = "skipped";
+
+    /** chat_message.role：用户自己说的话（判「今天是不是第一条消息」只看这个角色，不看 assistant） */
+    private static final String ROLE_USER = "user";
+
+    /**
+     * 主动监督的 yesterdaySummary.missedTasks 最多带几条。
+     * 只带几条明细就够模型点名了（「昨天早上那半小时没背单词」），全带上会把上下文撑长。
+     */
+    private static final int MAX_MISSED_TASKS = 5;
+
+    /**
      * AI 角色（persona）的兜底值：user.persona 为 NULL / 空白（老数据、脏数据）时用它。
      * <p>
      * 与 user 表这一列的默认值、Python 侧 ChatRequest.persona 的默认值、UserService.DEFAULT_PERSONA
@@ -196,6 +220,12 @@ public class AiService {
     /** user 表：本类只读 persona（AI 角色）一格，不写 user；查不到 / NULL / 空白都按 {@link #DEFAULT_PERSONA} 算 */
     private final UserMapper userMapper;
 
+    /** task 表：本类只读 —— 查「昨天的任务」算主动监督用的 yesterdaySummary（写任务一律走 TaskService） */
+    private final TaskMapper taskMapper;
+
+    /** chat_message 表：本类只读 —— 查「今天有没有说过话」判 isFirstMessageToday（落库对话走 ChatService） */
+    private final ChatMessageMapper chatMessageMapper;
+
     private final RestTemplate restTemplate;
 
     /**
@@ -209,6 +239,7 @@ public class AiService {
     public AiService(CourseService courseService, RestTimeService restTimeService, TaskService taskService,
                      ChatService chatService, MemoryService memoryService,
                      UserMemoryMapper userMemoryMapper, UserMapper userMapper,
+                     TaskMapper taskMapper, ChatMessageMapper chatMessageMapper,
                      RestTemplate aiRestTemplate, ObjectMapper objectMapper,
                      @Value("${ai.service.base-url}") String baseUrl) {
         this.courseService = courseService;
@@ -218,6 +249,8 @@ public class AiService {
         this.memoryService = memoryService;
         this.userMemoryMapper = userMemoryMapper;
         this.userMapper = userMapper;
+        this.taskMapper = taskMapper;
+        this.chatMessageMapper = chatMessageMapper;
         this.restTemplate = aiRestTemplate;
         this.objectMapper = objectMapper;
         // 去掉结尾的 "/"，避免拼出 http://host//ai/plan
@@ -762,9 +795,131 @@ public class AiService {
     }
 
     /**
-     * 组装上下文：今日任务 + 今日课程表 + 今日休息时段 + 用户画像记忆 + 今日空档，
+     * 今天是不是该用户的「第一条消息」：查 chat_message 里今天（自然日 00:00 起）有没有他发过的 user 消息。
+     * <p>
+     * 判的是**库里已有的**消息，不看正在处理的这一条 —— 两条链路都在落库之前组装 context
+     * （非流式是「问完 AI、执行完工具」才落库，流式是先组装 context 再 {@code chatService.saveUserMessage}），
+     * 所以「今天一条 user 消息都没有」= 这条就是今天的第一条。
+     * <p>
+     * 只看 {@code role = 'user'}：assistant 的回复不算「用户说过话」（正常都是成对落库，但万一库里只有
+     * 一条 assistant，也不该把「今天第一条」判掉）。
+     * <p>
+     * 不做缓存：一天也就查一两次，一次 selectCount 走 chat_message 的 idx_user_time 索引，
+     * 比引一份缓存 / 加一个「最后聊天时间」的列简单得多。
+     */
+    public boolean isFirstMessageToday(Long userId) {
+        LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
+        Long count = chatMessageMapper.selectCount(new LambdaQueryWrapper<ChatMessage>()
+                .eq(ChatMessage::getUserId, userId)
+                .eq(ChatMessage::getRole, ROLE_USER)
+                .ge(ChatMessage::getCreatedAt, startOfToday));
+        return count == null || count == 0;
+    }
+
+    /**
+     * 算「昨天的情况」：昨天（{@code plan_date = 昨天}）排了哪些任务、完成几条、漏几条、漏掉的是哪几条。
+     * <p>
+     * 口径（与 {@code TaskService.todayTasks} / {@code StatsService} 保持一致）：
+     * <ul>
+     *   <li>**排除 `status = 'skipped'`**：那是用户在今日页删掉的长期任务实例（软删除），任何统计都不该算；</li>
+     *   <li>completed = `status = 'done'`；missed = `status = 'missed'`，或 `status = 'pending'` 且已过计划结束时间；</li>
+     *   <li>total = 昨天任务条数（done / missed / pending / 脏状态都算）；</li>
+     *   <li>missedTasks 按开始时间从早到晚排序、最多 {@link #MAX_MISSED_TASKS} 条，所以 `missed` 可能比它大。</li>
+     * </ul>
+     * 昨天一条任务都没有时：total / completed / missed 都是 0、missedTasks 是空数组（不是 null），
+     * 调用方拿到就能直接塞进 context，不用再判空。
+     */
+    public AiChatRequest.YesterdaySummary buildYesterdaySummary(Long userId) {
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Task> tasks = taskMapper.selectList(new LambdaQueryWrapper<Task>()
+                .eq(Task::getUserId, userId)
+                .eq(Task::getPlanDate, yesterday)
+                // 软删掉的长期任务实例（skipped）不算：与今日任务列表 / 统计同一口径
+                .ne(Task::getStatus, TASK_STATUS_SKIPPED));
+        if (tasks == null) {
+            tasks = List.of();
+        }
+
+        int completed = 0;
+        List<Task> missed = new ArrayList<>();
+        for (Task task : tasks) {
+            if (TASK_STATUS_DONE.equals(trimToEmpty(task.getStatus()))) {
+                completed++;
+            } else if (isMissed(task, now)) {
+                missed.add(task);
+            }
+        }
+
+        AiChatRequest.YesterdaySummary summary = new AiChatRequest.YesterdaySummary();
+        summary.setDate(yesterday.format(DATE_FORMATTER));
+        summary.setTotal(tasks.size());
+        summary.setCompleted(completed);
+        summary.setMissed(missed.size());
+        summary.setMissedTasks(toMissedTaskBriefs(missed));
+        return summary;
+    }
+
+    /**
+     * 这条任务算不算「漏掉」：`status = 'missed'`，或者 `status = 'pending'` 但已经过了计划结束时间。
+     * 其它状态（done / skipped / 脏值）一律不算 —— 宁可漏报，也不要把没做完判断错的算进来。
+     */
+    private boolean isMissed(Task task, LocalDateTime now) {
+        String status = trimToEmpty(task.getStatus());
+        if (TASK_STATUS_MISSED.equals(status)) {
+            return true;
+        }
+        return TASK_STATUS_PENDING.equals(status) && isOverdue(task, now);
+    }
+
+    /**
+     * 任务是不是已经「过点」了：拿 `plan_date + end_time` 当截止时间（没填 end_time 就用 start_time，
+     * 两个都没填按当天 23:59:59 算），早于当前时间就算过点。
+     * <p>
+     * plan_date 为 null（脏数据）时判断不了日期，一律按「没过点」处理 —— 不猜。
+     */
+    private boolean isOverdue(Task task, LocalDateTime now) {
+        LocalDate planDate = task.getPlanDate();
+        if (planDate == null) {
+            return false;
+        }
+        LocalTime deadlineTime = task.getEndTime() != null ? task.getEndTime() : task.getStartTime();
+        LocalDateTime deadline = planDate.atTime(deadlineTime != null ? deadlineTime : LocalTime.MAX);
+        return deadline.isBefore(now);
+    }
+
+    /**
+     * 把漏掉的任务转成给模型看的明细：按开始时间从早到晚（没填开始时间的排最后，同一时间按 id），
+     * 最多 {@link #MAX_MISSED_TASKS} 条。title / 时间都做空值兜底（时间没有给空串，与今日任务一致）。
+     * <p>
+     * 只挑三条字段（title / startTime / endTime）：id、优先级、难度这些模型用不上，白占 token。
+     */
+    private List<AiChatRequest.MissedTask> toMissedTaskBriefs(List<Task> missedTasks) {
+        List<Task> sorted = new ArrayList<>(missedTasks);
+        sorted.sort(Comparator.comparing(Task::getStartTime, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(Task::getId, Comparator.nullsLast(Comparator.naturalOrder())));
+
+        List<AiChatRequest.MissedTask> briefs = new ArrayList<>();
+        for (Task task : sorted) {
+            if (briefs.size() >= MAX_MISSED_TASKS) {
+                break;
+            }
+            AiChatRequest.MissedTask brief = new AiChatRequest.MissedTask();
+            brief.setTitle(blankIfNull(task.getTitle()));
+            brief.setStartTime(formatTime(task.getStartTime()));
+            brief.setEndTime(formatTime(task.getEndTime()));
+            briefs.add(brief);
+        }
+        return briefs;
+    }
+
+    /**
+     * 组装上下文：今日任务 + 今日课程表 + 今日休息时段 + 用户画像记忆 + 今日空档 + 主动监督的两个字段，
      * 前三样让模型知道用户今天的时间安排，第四样让模型「认识」这个用户，第五样（availableSlots）
-     * 让模型知道今天还剩哪些空档，用于对话式排任务。
+     * 让模型知道今天还剩哪些空档，用于对话式排任务；后两样（isFirstMessageToday / yesterdaySummary）
+     * 让模型知道「今天是不是第一次说话、昨天有没有掉链子」—— 只是往 context 里多填两个字段，
+     * 已有的查询 / 组装逻辑一行没改。
      * <p>
      * 课程按「今天」的星期查（CourseService 支持 dayOfWeek 过滤）；休息时间查全部后在内存里筛，
      * dayOfWeek 为 null（每天生效）或等于今天的才算 —— 与可用时段算的是同一套口径。
@@ -835,6 +990,23 @@ public class AiService {
         context.setUserMemories(buildUserMemories(userId));
         // 今日空档：复用 /ai/plan 的算法（课程 + 休息 + 今日已有任务都算占用）；算不出来给空数组，不影响聊天
         context.setAvailableSlots(buildChatAvailableSlots(dayOfWeek, todayCourses, allRestTimes, todayTasks));
+
+        // 主动监督（Step 1）：
+        // isFirstMessageToday 每次都填 —— 判的是库里已有的消息（两条链路都在落库之前走这里，不含正在发的这条）；
+        // yesterdaySummary 只在「今天第一条消息」时才查 + 填，其它时候留 null —— 每天主动提一次就够，
+        // 后面每一轮都带上会白烧 token；null 与「昨天没任务」区分得开（没任务时是 total=0 的空对象）。
+        boolean firstMessageToday = isFirstMessageToday(userId);
+        AiChatRequest.YesterdaySummary yesterdaySummary =
+                firstMessageToday ? buildYesterdaySummary(userId) : null;
+        context.setIsFirstMessageToday(firstMessageToday);
+        context.setYesterdaySummary(yesterdaySummary);
+
+        // 每次聊天打一行：判没判对「今天第一条」、昨天几条完成一眼可见
+        // （不是第一条时昨天的情况根本没查，total / completed 打 "-"）
+        log.info("[调试] isFirstMessageToday = {}, 昨天 total={} completed={}",
+                firstMessageToday,
+                yesterdaySummary == null ? "-" : yesterdaySummary.getTotal(),
+                yesterdaySummary == null ? "-" : yesterdaySummary.getCompleted());
         return context;
     }
 

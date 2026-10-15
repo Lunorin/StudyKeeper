@@ -331,3 +331,27 @@
 | 16.12 | 验证方式 | 新增 `DeleteAccountLightTempTests`（9 个用例，**不连库、不起 Spring 容器、不用 Mockito**：9 个 Mapper 全用 JDK 动态代理假实现、密码用真 BCrypt 生成）——断言：① 9 张表按 16.5 的顺序各删一次，前 8 张的 wrapper 都是 `user_id = 7`、`user` 表是 `id = 7`（且**不含** `user_id`，`user` 表没这列）；② 密码错 / 空密码 / 用户不存在时**一张表都不动**；③ 删到第 5 张表失败时异常往外抛（配合 16.6 的注解断言 → 会回滚）；④ `@Transactional.rollbackFor() == {Exception.class}`；⑤ Controller 的 `0` / `400 密码错误` / `400 密码不能为空` / `400 用户不存在` 映射，且 userId 确实来自 request attribute。既有 `PasswordStrengthLightTempTests` 12 个用例仍全绿（`UserService` 构造器改了参数，但没人手工 new 它）|
 
 
+## 17. AI 主动监督 · Step 1（Java 侧构建昨天的数据）既定决策
+
+> 目标：在 POST /api/ai/chat 与 POST /api/ai/chat/stream 送给 Python 的 `context` 里加两个字段 ——
+> `isFirstMessageToday`（今天是不是第一条消息）与 `yesterdaySummary`（昨天排了几条 / 完成几条 / 漏了哪几条）。
+> **只做 Java**：Python 侧怎么用、怎么说话术是下一步（**Python 一行没动**）；前端也不动
+> （`context` 本来就由 Java 现查，前端传了也不看）。已有的 chat 逻辑一行没改 —— 只是在 `buildContext` 末尾多填两个字段。
+
+| # | 决策 | 说明 |
+| --- | --- | --- |
+| 17.1 | 字段加在哪 | 加在已有的 `AiChatRequest.Context` 里（不是顶层）：Python 侧 `ChatRequest` 是 `extra="forbid"`（顶层多一个字段直接 422），但**嵌套的 `ChatContext` 不是** —— 放 context 里现在就不会 422，Python 到下一步才解析。`/ai/chat` 与 `/ai/chat/stream` 共用 `buildContext`，**两条链路天然一致**，不用改两处 |
+| 17.2 | `isFirstMessageToday` 必须用包装类 `Boolean` | Lombok 对**基本类型** `boolean` 生成的是 `isFirstMessageToday()`，Jackson 会把属性名推成 `firstMessageToday`（JSON key 就错了）；包装类生成 `getIsFirstMessageToday()` → key 正好是 `isFirstMessageToday`。key 必须与下一步 Python 模型逐字一致，测试里专门钉住了这一条 |
+| 17.3 | 「今天第一条」怎么判 | 查 `chat_message`：`user_id = 当前用户 AND role = 'user' AND created_at >= 今天 00:00`，**count = 0 → true**。判的是**库里已有的**消息，**不含正在处理的这一条** —— 非流式是「问完 AI、执行完工具」才落库，流式是先 `buildContext` 再 `saveUserMessage`，所以两条链路都不用「先落库再判断」 |
+| 17.4 | 为什么只看 `role = 'user'` | 用户说的话才算「今天说过话」。assistant 回复正常都成对落库，但万一库里只有一条 assistant（历史数据 / 异步落库），不该把「今天第一条」判掉 |
+| 17.5 | 不做缓存 | 一次 `selectCount` 走 `chat_message.idx_user_time`，一天也就一两次。不引缓存、不加「最后聊天时间」列、不往 `user` 表加字段 |
+| 17.6 | `yesterdaySummary` 的统计口径 | `plan_date = 昨天` 且 **`status <> 'skipped'`**（与 `TaskService.todayTasks` / `StatsService` 同一口径：skipped 是用户在今日页删掉的长期任务实例）→ `total` = 行数；`completed` = `status = 'done'`；`missed` = `status = 'missed'` **或**（`status = 'pending'` 且已过计划结束时间） |
+| 17.7 | 「已过点」怎么算 | 截止时间 = `plan_date + end_time`（没填 end_time 用 start_time，两个都没填按当天 23:59:59），早于当前时间即过点。`plan_date` 为 null 的脏数据判断不了日期 → **不算过点**（宁可漏报，也不把没排期的任务说成漏掉）。昨天的 pending 任务必然过点，所以昨天这批数据上 `total = completed + missed` 恒成立 |
+| 17.8 | `missedTasks` 的取法与上限 | 只给 `title` / `startTime` / `endTime`（id / 优先级 / 难度模型用不上，白占 token），按**开始时间从早到晚**排序（没填开始时间的排最后，同一时间按 id），**最多 5 条**，所以 `missed` 可能大于 `missedTasks.size()`。时间统一 `HH:mm`、没有值时**空串**（与今日任务同一口径，Python 侧是 str，给 null 会 422） |
+| 17.9 | 只在第一条消息时填 `yesterdaySummary` | 不是今天第一条就传 **`null`**（省 token）。与「昨天没任务」区分得开：没任务时是 `total = 0` 的空对象，不是 null。`isFirstMessageToday` 则**每次都填**（true / false，不会是 null），前端 / Python 靠它决定要不要主动开场 |
+| 17.10 | 日志 | 每次聊天一行：`[调试] isFirstMessageToday = {}, 昨天 total={} completed={}`。不是第一条时昨天的情况**根本没查**，`total` / `completed` 打 `-`（不为了日志多查一次库）。已有日志一处没动 |
+| 17.11 | 注入方式 | `AiService` 构造器多两个 Mapper：`TaskMapper`（只读，查昨天的任务）与 `ChatMessageMapper`（只读，查今天说过话没），走构造器注入。**本类不写库**：写任务仍走 TaskService、落库对话仍走 ChatService。**没有新依赖、没有 DDL、没有索引变更**（`chat_message.idx_user_time` 与 `task.idx_user_date` 刚好各自覆盖这两个查询） |
+| 17.12 | 本步明确不做 | 改 chat 逻辑本身（工具调用 / 落库 / 事务 / 错误码一律没动）、把昨天的任务混进 `todayTasks`（`current tasks` 一个字没改）、Python 侧解析与提示词、前端改动、跨多天趋势（只做「昨天」）、漏掉原因分析、缓存 / 新表 / 新列 |
+| 17.13 | 验证方式 | 新增 `AiYesterdayContextLightTempTests`（7 个用例，**不连库、不起容器、不用 Mockito**：两个 Mapper 用 JDK 动态代理；构造 `AiService` 时用不到的依赖故意传 null，真被碰到就 NPE）——断言：① count = 0 / null → true、count = 3 → false；② 查询条件含 `user_id` + `role = 'user'` + `created_at >= 今天 00:00`；③ 11 条昨天任务（2 done / 2 missed / 6 条过点 pending / 1 条 `plan_date` 为 null 的脏数据）→ total=11、completed=2、missed=8，`missedTasks` 只留按时间最早的 5 条且顺序正确；④ 昨天没任务 → 全 0 + 空数组；⑤ title / 时间缺失 → 空串；⑥ SQL 里 `plan_date = 昨天` 且 `status <> 'skipped'`；⑦ **JSON key 就是 `isFirstMessageToday` / `yesterdaySummary`**（钉住 17.2 的坑），不是第一条时 `yesterdaySummary: null`。另跑 `StudyKeeperApplicationTests`（`@SpringBootTest`）确认 12 参构造器注入没问题、容器照常启动 |
+
+

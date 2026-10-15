@@ -28,6 +28,9 @@ context 由调用方（Java 侧）现查后传进来，缺字段一律按空列�
     userMemories    用户画像记忆（category + content），非空时注入 system prompt
     availableSlots  今天算好的可用空档（startTime + endTime），也注入 system prompt，
                     供「对话式排任务」参考；空档是 Java 侧算好的，这里不校验、不过滤
+    isFirstMessageToday  这条消息是不是用户「今天的第一条」（Java 侧查 chat_message 现算）
+    yesterdaySummary     昨天干得怎么样（date + total + completed + missed + missedTasks），
+                         **只在 isFirstMessageToday = true 时才有值**，其它时候是 null
 
 画像注入的边界：只是把「已经记住的几条」告诉模型，让它别每次都重新问一遍；
 不在这里做排序 / 去重 / 评分，也不改工具调用的行为。userMemories 为空时不加这一段。
@@ -37,6 +40,16 @@ context 由调用方（Java 侧）现查后传进来，缺字段一律按空列�
 add_task（每条建议调一次），要改就重新给一版完整建议再问一次（此时不调工具），用户拒绝则不调工具。
 这些规则全部写在 BEHAVIOR_PROMPT 里，Python 侧不做任何配合逻辑：不解析建议、不校验建议是否落在
 空档内、也不缓存「上一版建议」——上一版建议靠调用方通过 history 带回来。
+
+「主动监督」：Java 侧只在「今天第一条消息」时才把昨天的情况查出来（context.yesterdaySummary，
+同时 context.isFirstMessageToday = true）。满足条件且昨天真排过任务时，在 system prompt 的
+「今天可用空档」之后追加一段【昨天的学习情况】（日期 / 总任务 / 完成 / 未完成 + 未完成明细），
+让模型在用户今天第一次说话时主动反馈昨天；怎么说话术写在 BEHAVIOR_PROMPT 的【主动监督规则】里，
+语气跟随当前 persona。Python 侧不做任何配合逻辑：不复核数字、不算完成率、不查库、不记「提过了没」——
+每天只提一次靠 Java 只在第一条消息时传 yesterdaySummary 保证（后续对话传 null，这段就不会出现）。
+
+边界：isFirstMessageToday 不是 true、yesterdaySummary 为 null、昨天没排任务（total = 0）时，
+一个字都不加 —— 不打扰用户，也不会出现「昨天全 0 个」这种没有意义的段落。
 
 system prompt 末尾还会带上「当前时间」（见 app/utils/time_context.py）：模型自己不知道现在几点，
 不告诉它就容易把「今天 / 明天」算错。这一行每次请求都现取，不做缓存。
@@ -58,6 +71,7 @@ MAX_COURSES_IN_CONTEXT = 50      # 今日课程最多列 50 条
 MAX_REST_TIMES_IN_CONTEXT = 50   # 今日休息时段最多列 50 条
 MAX_MEMORIES_IN_CONTEXT = 50     # 用户画像记忆最多列 50 条（Java 侧每类最多 3 条，实际 ≤ 15）
 MAX_SLOTS_IN_CONTEXT = 50        # 今天可用空档最多列 50 条（一天排不出这么多，纯属兜底上限）
+MAX_MISSED_TASKS_IN_CONTEXT = 5  # 昨天未完成的任务最多列 5 条（Java 侧本来就最多给 5 条，这里只是兜底）
 
 # 画像记忆的分类中文名；表里没有的类别（未知值）直接用英文原值展示
 CATEGORY_LABELS = {
@@ -78,6 +92,13 @@ MEMORY_SECTION_HINT = ("在回复时可以自然参考这些信息，但不要�
 SLOTS_SECTION_TITLE = "今天可用空档："
 SLOTS_SECTION_NAME = "今天可用空档"
 EMPTY_SLOTS_TEXT = "（今天没有可用空档）"   # 一个空档都没有时的占位说明，SYSTEM_PROMPT 里会提到它
+
+# 「昨天的学习情况」那一段（主动监督用，只在每天第一条消息时追加）：
+# 标题 + 括号里的说明拼成第一行；规则里提到它时用不带说明的名字。
+YESTERDAY_SECTION_TITLE = "【昨天的学习情况】"
+YESTERDAY_SECTION_HINT = "（今天是新的一天，这是用户今天第一条消息）"
+UNKNOWN_YESTERDAY_DATE = "（日期未知）"            # Java 没给日期时的兜底（正常不会发生）
+EMPTY_MISSED_DETAILS_TEXT = "（未提供任务明细）"    # missed > 0 但 Java 没给明细时的兜底
 
 # 「对话式排任务」规则：规划类问题先给建议并问一句，等用户确认后才调 add_task。
 # 单独成一段，方便对照规则本身；（name）（empty）由下面的常量填，改文案不用改两处。
@@ -108,7 +129,31 @@ PLANNING_RULES = (
 ).format(name=SLOTS_SECTION_NAME, empty=EMPTY_SLOTS_TEXT)
 
 
-# 通用行为规则（所有 persona 共用）：能力说明 + 工具调用规则 + 对话式排任务规则。
+# 「主动监督」规则：只有 system prompt 里出现了【昨天的学习情况】这一段时才提昨天
+# （那一段只在每天第一条消息注入，见 build_messages），话术跟随当前 persona。
+# 单独成段，方便对照规则本身；（title）由常量填，改文案不用改两处。
+SUPERVISION_RULES = (
+    "【主动监督规则】\n"
+    "当 system prompt 里出现「{title}」时（那只在每天第一条消息时出现，说明这是用户今天开口说的第一句）：\n"
+    "a. 如果未完成任务数 = 0（昨天全部完成）：\n"
+    "- 简短肯定一句（不超过 15 字），例如「昨天全完成了，很好。今天继续。」；\n"
+    "- 不要长篇大论，不要表扬过头。\n"
+    "b. 如果有未完成任务：\n"
+    "- 先提具体是哪些任务没完成（用任务标题，照着「未完成的任务」那几行说）；\n"
+    "- 如果这些任务都落在同一个时段（比如都在晚上），点出这个模式；\n"
+    "- 给一个今天可执行的小建议（比如「今天试试把背单词挪到早上」）；\n"
+    "- 不要说教、不要长篇大论、不要训斥。\n"
+    "c. 语气跟随当前的人格设定：\n"
+    "- 默认（温和）：鼓励为主，如「昨天有 2 个没完成，是不是有点多？今天要不要少安排一个？」；\n"
+    "- 曾国藩（稳重）：「昨天你怠了 2 件事。今天先做最小的那件。慢慢来，但不要停。」；\n"
+    "- 真理医生（犀利）：「昨天 2 个任务没完成。是没时间，还是没打算做？先说清楚，今天才能改。」。\n"
+    "d. 只在这条消息里提昨天的事，后面的对话不要再提；\n"
+    "e. 用户这句话在问别的事时，先答用户的问题，再用一句话带上昨天的情况，不要为了提昨天硬扯。\n"
+    "「{title}」没出现时，完全不要提昨天，也不要猜昨天做了什么。"
+).format(title=YESTERDAY_SECTION_TITLE)
+
+
+# 通用行为规则（所有 persona 共用）：能力说明 + 工具调用规则 + 对话式排任务规则 + 主动监督规则。
 # 人格设定不在这里 —— 它由 personas.get_persona_prompt(persona_id) 提供，
 # 在 build_messages 里拼在 system prompt 最前面（替换，不与默认人格叠加）。
 BEHAVIOR_PROMPT = (
@@ -125,7 +170,7 @@ BEHAVIOR_PROMPT = (
     "先问一句是哪一项；complete_task 只用 keyword、不传 taskId；"
     "修改或删除时，taskId 只能用任务列表里出现过的 id。\n"
     "如果用户只是聊天或提问，直接回复就好，不要调用工具；只有「某项任务做完了」才用 complete_task。\n"
-) + PLANNING_RULES
+) + PLANNING_RULES + "\n" + SUPERVISION_RULES
 
 
 def format_tasks(today_tasks):
@@ -222,12 +267,98 @@ def format_user_memories(user_memories):
     return "\n".join(lines)
 
 
+def to_count(value):
+    """把 Java 传来的计数（total / completed / missed）转成 int 展示。
+
+    None / 字符串 / 布尔 / 缺失一律当 0：宁可写「0 个」，也不要往 prompt 里塞一个 "None"。
+    Java 侧正常都会填（见 AiChatRequest.YesterdaySummary），这里只是排版前的兜底。
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return 0
+    return int(value)
+
+
+def format_yesterday_summary(yesterday_summary):
+    """把「昨天的情况」排成给模型看的多行文本（主动监督用）；不该展示时返回空串。
+
+    调用方（build_messages）只在「今天第一条消息」时才把 context.yesterdaySummary 递进来，
+    这里只负责排版与取值兜底，不做别的业务判断：
+
+    格式（【昨天的学习情况】那一行由 YESTERDAY_SECTION_TITLE + YESTERDAY_SECTION_HINT 拼成）：
+        【昨天的学习情况】（今天是新的一天，这是用户今天第一条消息）
+        日期：2026-10-14
+        总任务：5 个，完成 3 个，未完成 2 个
+        未完成的任务：
+        - 背单词 50 个（07:00-07:30）
+        - 数学练习 P20-22（20:00-21:00）
+
+    边界：
+    - 不是 dict（含 None / missing）或昨天没排任务（total <= 0）→ 返回空串，不打扰用户，
+      也不会让 system prompt 多一段「昨天 0 个任务」的空话；
+    - 昨天全部完成（missed = 0）→ 不列「未完成的任务」，模型按【主动监督规则】a 简短肯定一句；
+    - 明细最多列 MAX_MISSED_TASKS_IN_CONTEXT 条；标题为空的条目跳过（不编造任务名），
+      时间缺一个就只写标题（不给模型半个时段，与 format_slots 同一口径）。
+    """
+    if not isinstance(yesterday_summary, dict):
+        return ""
+
+    total = to_count(yesterday_summary.get("total"))
+    if total <= 0:
+        return ""
+
+    completed = to_count(yesterday_summary.get("completed"))
+    missed = to_count(yesterday_summary.get("missed"))
+    date_text = str(yesterday_summary.get("date") or "").strip() or UNKNOWN_YESTERDAY_DATE
+
+    lines = [
+        "{}{}".format(YESTERDAY_SECTION_TITLE, YESTERDAY_SECTION_HINT),
+        "日期：{}".format(date_text),
+        "总任务：{total} 个，完成 {completed} 个，未完成 {missed} 个".format(
+            total=total, completed=completed, missed=missed),
+    ]
+
+    if missed > 0:
+        details = format_missed_tasks(yesterday_summary.get("missedTasks"))
+        lines.append("未完成的任务：")
+        # 明细缺失（Java 理论上不会）也要占一行，别让模型以为「未完成的任务」下面是空的
+        lines.extend(details or [EMPTY_MISSED_DETAILS_TEXT])
+
+    return "\n".join(lines)
+
+
+def format_missed_tasks(missed_tasks):
+    """把昨天未完成的任务排成多行「- 标题（HH:mm-HH:mm）」；一条可用的都没有时返回空列表。
+
+    只展示 title / startTime / endTime 三个字段（Java 侧也只给这三个）；标题为空跳过，
+    时间缺一个就只写标题 —— 返回空列表时由调用方决定兜底文案。
+    """
+    lines = []
+    for task in (missed_tasks or [])[:MAX_MISSED_TASKS_IN_CONTEXT]:
+        if not isinstance(task, dict):
+            continue
+        # 收成一行，避免多行标题把「一条一行」的格式冲散
+        title = " ".join(str(task.get("title") or "").split())
+        if not title:
+            continue
+        start = str(task.get("startTime") or "").strip()
+        end = str(task.get("endTime") or "").strip()
+        if start and end:
+            lines.append("- {}（{}-{}）".format(title, start, end))
+        else:
+            lines.append("- {}".format(title))
+    return lines
+
+
 def build_messages(message, history, context, persona_id="default"):
     """组装 messages：system（人格设定 + 通用规则 + 今日任务 / 课程表 / 休息时段 / 可用空档
-    + 用户画像记忆 + 当前时间）→ history 原样带上 → 当前这句。
+    + 昨天的学习情况 + 用户画像记忆 + 当前时间）→ history 原样带上 → 当前这句。
 
     人格设定由 personas.get_persona_prompt(persona_id) 决定，只替换、不与默认人格叠加；
     persona_id 未知 / None 时回退默认人格（合法性由 Java 侧校验，这里不校验）。
+
+    【昨天的学习情况】只在「今天第一条消息 + Java 给了昨天的情况 + 昨天真排过任务」时才有：
+    context.isFirstMessageToday 为真时读 context.yesterdaySummary，否则根本不读（Java 那时传的是
+    null）。其余情况一个字都不加 —— 所以后续对话不会反复提昨天，昨天没任务时也不会多一段空话。
     """
     persona_prompt = get_persona_prompt(persona_id)
     # 每次调用打一条调试日志：方便确认 Java 到底把哪个 persona 传了下来
@@ -238,6 +369,11 @@ def build_messages(message, history, context, persona_id="default"):
     today_rest_times = (context or {}).get("todayRestTimes") or []
     available_slots = (context or {}).get("availableSlots") or []
     memories = format_user_memories((context or {}).get("userMemories") or [])
+    # 主动监督：不是今天第一条就别看 yesterdaySummary（Java 那时也只会传 null）；
+    # 昨天没任务（total = 0）时 format_yesterday_summary 返回空串，两种情况都不追加任何内容。
+    is_first_message_today = (context or {}).get("isFirstMessageToday")
+    yesterday_section = format_yesterday_summary(
+        (context or {}).get("yesterdaySummary") if is_first_message_today else None)
     system_content = (
         "{persona}\n\n"
         "{rules}\n\n"
@@ -254,6 +390,11 @@ def build_messages(message, history, context, persona_id="default"):
         slots_title=SLOTS_SECTION_TITLE,
         slots=format_slots(available_slots),
     )
+
+    # 「昨天的学习情况」紧跟在可用空档之后（画像记忆之前）：每天第一条消息才有，一天只提一次
+    if yesterday_section:
+        system_content = "{}\n\n{}".format(system_content, yesterday_section)
+        print("[调试] 今天第一条消息，注入昨天的学习情况", file=sys.stderr)
 
     # 有画像记忆才追加这一段；没有画像时这里什么都不加，不会留下空标题
     if memories:

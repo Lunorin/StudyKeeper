@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65bab893-da4b-4403-a407-5639253b2f44" name="更改" comment="" />
+    <list default="true" id="65bab893-da4b-4403-a407-5639253b2f44" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/../StudyKeeper/docs/api.md" beforeDir="false" afterPath="$PROJECT_DIR$/../StudyKeeper/docs/api.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../StudyKeeper/docs/decisions.md" beforeDir="false" afterPath="$PROJECT_DIR$/../StudyKeeper/docs/decisions.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../StudyKeeper/src/main/java/studykeeper/dto/AiChatRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../StudyKeeper/src/main/java/studykeeper/dto/AiChatRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../StudyKeeper/src/main/java/studykeeper/service/AiService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../StudyKeeper/src/main/java/studykeeper/service/AiService.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -112,6 +117,7 @@
       <workItem from="1790217827985" duration="616000" />
       <workItem from="1790512479637" duration="683000" />
       <workItem from="1791688226786" duration="4160000" />
+      <workItem from="1792073052576" duration="1001000" />
     </task>
     <servers />
   </component>

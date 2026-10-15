@@ -21,7 +21,13 @@ POST /ai/chat
                                            "label": "午休"}],
                        "availableSlots": [{"startTime": "12:00", "endTime": "14:10"},
                                           {"startTime": "15:40", "endTime": "19:10"}],
-                       "userMemories": [{"category": "event", "content": "用户下周要考雅思"}]}}
+                       "userMemories": [{"category": "event", "content": "用户下周要考雅思"}],
+                       "isFirstMessageToday": true,
+                       "yesterdaySummary": {"date": "2026-10-14", "total": 5, "completed": 3,
+                                            "missed": 2,
+                                            "missedTasks": [{"title": "背单词 50 个",
+                                                             "startTime": "07:00",
+                                                             "endTime": "07:30"}]}}}
     响应：{"reply": "...", "toolCalls": [{"name": "add_task", "arguments": {...}}]}
     工具调用只是模型的「意图」，本服务不执行它：执行、落库都在 Java 侧。
     persona 是 AI 角色，决定 system prompt 开头的「人格设定」段（见 app/services/personas.py）：
@@ -38,11 +44,27 @@ POST /ai/chat
     「（今天没有可用空档）」，模型应回复「今天好像没有空档时间了」。
     这一行只是展示：Python 不校验空档、不复核建议是否落在空档内，也不缓存「上一版建议」
     （上一版建议靠调用方通过 history 带回来）。
+    主动监督（Step 2）：context.isFirstMessageToday 说明「这条消息是不是用户今天的第一条」，
+    context.yesterdaySummary 是昨天的情况（date / total / completed / missed / missedTasks，
+    由 Java 侧现算，只在第一条消息时才有值）。**两个条件同时成立且昨天真排过任务（total > 0）**时，
+    Python 会在 system prompt 的「今天可用空档」之后追加一段【昨天的学习情况】：
+        【昨天的学习情况】（今天是新的一天，这是用户今天第一条消息）
+        日期：2026-10-14
+        总任务：5 个，完成 3 个，未完成 2 个
+        未完成的任务：
+        - 背单词 50 个（07:00-07:30）
+        怎么反馈写在 chat.SUPERVISION_RULES（【主动监督规则】，与其它规则并列）：全完成就简短肯定一句、
+    有未完成就先点出是哪几件（都落在同一时段时点出这个模式）+ 给一个今天可执行的小建议，
+    语气跟随 persona，只说这一次、后续对话不再提。边界：不是今天第一条 / yesterdaySummary 为 null /
+    昨天没任务（total = 0）时一个字都不加（不打扰用户）；Python 无状态，不记「今天提过没」——
+    「每天只提一次」靠 Java 只在第一条消息时传 yesterdaySummary 保证。
+    另：不在用户明确问别的问题时硬扯昨天（规则里要求先答用户的问题）。
 
 POST /ai/chat/stream
     请求：与 /ai/chat 完全相同（message + history + context + persona）；history 同样会带给模型 ——
           流式与非流式共用同一份 messages 组装逻辑，所以「用户同意上一轮建议」这类依赖历史的
-          回答在流式下也成立。请求体不合法照样由 FastAPI 返回 422。
+          回答在流式下也成立（主动监督的 context.isFirstMessageToday / yesterdaySummary 也一样生效）。
+          请求体不合法照样由 FastAPI 返回 422。
     响应：SSE（text/event-stream），每条以 "data: " 开头、以空行结尾，JSON 用
           ensure_ascii=False（中文按原样发）。事件有三种：
               {"type": "delta", "content": "…"}                正文片段，逐段到达
@@ -97,6 +119,7 @@ MAX_CHAT_COURSES = 50           # /ai/chat：今日课程最多 50 条
 MAX_CHAT_REST_TIMES = 50        # /ai/chat：今日休息时段最多 50 条
 MAX_CHAT_MEMORIES = 50          # /ai/chat：用户画像记忆最多 50 条（Java 侧每类最多 3 条）
 MAX_CHAT_SLOTS = 50             # /ai/chat：今日可用空档最多 50 条（一天排不出这么多，兜底上限）
+MAX_CHAT_MISSED_TASKS = 5       # /ai/chat：昨天未完成的任务最多 5 条（Java 侧 buildYesterdaySummary 就限 5 条）
 MAX_MESSAGE_LENGTH = 2000       # /ai/chat：用户这句话的长度上限
 MAX_RAW_TEXT_LENGTH = 5000      # /ai/parse-course：课程文本长度上限
 MAX_COURSE_NAME = 100           # /ai/parse-course：课程名长度上限
@@ -226,8 +249,40 @@ class MemoryBrief(BaseModel):
     content: str = Field(default="", max_length=500, examples=["用户下周要考雅思"])
 
 
+class MissedTaskBrief(BaseModel):
+    """/ai/chat 里昨天漏掉的一条任务（Java 侧的 YesterdaySummary.missedTasks）。
+
+    只给 title / startTime / endTime 三样，时间不校验格式（与 TaskBrief 同口径：只展示给模型看）；
+    时间没有值时 Java 传空串，所以默认值也是空串。
+    """
+
+    title: str = Field(default="", max_length=200, examples=["背 50 个单词"])
+    startTime: str = Field(default="", max_length=20, examples=["07:00"])
+    endTime: str = Field(default="", max_length=20, examples=["07:30"])
+
+
+class YesterdaySummaryBrief(BaseModel):
+    """/ai/chat 里昨天的情况（主动监督用），由 Java 侧现查 task 表算出。
+
+    只在 isFirstMessageToday = true 时才有值，其它时候是 null；昨天没任务时是 total = 0 的空对象
+    （不是 null）。Python 只用它给模型排版出一段【昨天的学习情况】，不复核数字、不算完成率、不查库。
+    时间字段（missedTasks 里的）没有值时是空串，与今日任务同一口径。
+    """
+
+    date: str = Field(default="", max_length=20, examples=["2026-10-14"])
+    total: int = Field(default=0, ge=0, examples=[5])
+    completed: int = Field(default=0, ge=0, examples=[3])
+    missed: int = Field(default=0, ge=0, examples=[2])
+    missedTasks: list[MissedTaskBrief] = Field(default_factory=list,
+                                               max_length=MAX_CHAT_MISSED_TASKS)
+
+
 class ChatContext(BaseModel):
-    """/ai/chat 的上下文：今天有哪些任务、哪些课、哪些休息时段、哪些可用空档，以及用户画像记忆。"""
+    """/ai/chat 的上下文：今天有哪些任务、哪些课、哪些休息时段、哪些可用空档，以及用户画像记忆。
+
+    另有主动监督用的两个字段：isFirstMessageToday（今天这条是不是用户今天的第一条消息）与
+    yesterdaySummary（昨天干得怎么样，只在第一条消息时才有值）—— 都由 Java 侧现查后传进来。
+    """
 
     todayTasks: list[TaskBrief] = Field(default_factory=list, max_length=MAX_CHAT_TASKS)
     todayCourses: list[CourseBrief] = Field(default_factory=list, max_length=MAX_CHAT_COURSES)
@@ -236,6 +291,10 @@ class ChatContext(BaseModel):
     availableSlots: list[SlotBrief] = Field(default_factory=list, max_length=MAX_CHAT_SLOTS)
     userMemories: list[MemoryBrief] = Field(default_factory=list,
                                            max_length=MAX_CHAT_MEMORIES)
+    # 不传 / null 都当 false（不主动提昨天），与 Java 侧「一定传 true / false」兼容
+    isFirstMessageToday: Optional[bool] = Field(default=False, examples=[True])
+    # 只在 isFirstMessageToday = true 时才有值；null / 不传 → system prompt 里不加【昨天的学习情况】
+    yesterdaySummary: Optional[YesterdaySummaryBrief] = Field(default=None)
 
     @field_validator("availableSlots", mode="before")
     @classmethod
@@ -421,6 +480,11 @@ def ai_chat(payload: ChatRequest):
                 "availableSlots": [slot.model_dump() for slot in payload.context.availableSlots],
                 "userMemories": [memory.model_dump()
                                  for memory in payload.context.userMemories],
+                # 主动监督：isFirstMessageToday 每次照传；yesterdaySummary 没有值时给 null
+                # （不是今天第一条 / 昨天没任务时 Java 传来的就是 null 或 total = 0 的空对象）
+                "isFirstMessageToday": payload.context.isFirstMessageToday,
+                "yesterdaySummary": (payload.context.yesterdaySummary.model_dump()
+                                     if payload.context.yesterdaySummary else None),
             },
             persona_id=payload.persona,
         )
@@ -465,6 +529,10 @@ def ai_chat_stream(payload: ChatRequest):
                            for rest_time in payload.context.todayRestTimes],
         "availableSlots": [slot.model_dump() for slot in payload.context.availableSlots],
         "userMemories": [memory.model_dump() for memory in payload.context.userMemories],
+        # 主动监督：与 /ai/chat 完全一致（两条链路共用 build_messages，注入内容天然一致）
+        "isFirstMessageToday": payload.context.isFirstMessageToday,
+        "yesterdaySummary": (payload.context.yesterdaySummary.model_dump()
+                             if payload.context.yesterdaySummary else None),
     }
     history = [item.model_dump() for item in payload.history]
 
