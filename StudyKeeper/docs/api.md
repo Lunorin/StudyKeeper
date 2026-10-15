@@ -1542,17 +1542,19 @@ POST /ai/extract-memory
 | 用户资料 | POST | /api/user/feedback | 意见反馈 |
 | 用户资料 | GET | /api/user/onboarding-status | 新用户引导状态 |
 | 用户资料 | POST | /api/user/onboarding-complete | 标记引导完成 |
+| 用户资料 | DELETE | /api/user/account | 注销账号（验密码后删全部数据） |
 | AI | POST | /ai/plan | 拆解任务 |
 | AI | POST | /ai/chat | 对话 |
 | AI | POST | /ai/parse-course | 解析课程 |
 | AI | POST | /ai/parse-task | 解析任务 |
 | AI | POST | /ai/extract-memory | 记忆提炼 |
 
-**共 42 个接口：前端调 35 个，Java 调 Python 5 个，还有 2 个是内部辅助。**（本步新增 2 个：
-`GET /api/user/onboarding-status`、`POST /api/user/onboarding-complete`）
+**共 43 个接口：前端调 36 个，Java 调 Python 5 个，还有 2 个是内部辅助。**（本步新增 1 个：
+`DELETE /api/user/account`；上一步新增的 2 个是 `GET /api/user/onboarding-status`、
+`POST /api/user/onboarding-complete`）
 
-> 记一笔：上表实际行数与这句话的口径**在本步之前就对不上**（行数比 40 多），
-> 这里只按本步新增的 2 个接口做**增量**调整（40 → 42、33 → 35），没有重新盘点历史口径。
+> 记一笔：上表实际行数与这句话的口径**在加新用户引导那步之前就对不上**（行数比 40 多），
+> 这里只按本步新增的 1 个接口做**增量**调整（42 → 43、35 → 36），没有重新盘点历史口径。
 
 ---
 
@@ -1593,12 +1595,13 @@ POST /ai/extract-memory
 
 ## 12. 用户资料模块
 
-> 右上角头像那一套，外加新用户引导的状态。共 6 个接口：看资料 / 改资料（含绑定手机号、邮箱）、
-> 改通知设置、提交意见反馈、查引导状态 / 标记引导完成。
+> 右上角头像那一套，外加新用户引导的状态与**注销账号**。共 7 个接口：看资料 / 改资料（含绑定手机号、邮箱）、
+> 改通知设置、提交意见反馈、查引导状态 / 标记引导完成、注销账号（验密码后物理删掉全部数据）。
 > **不含改密码**（单独做）、**不做头像文件上传**
-> （前端直接把 emoji 或 base64 字符串传给 `avatar`）、**不做反馈列表查询 / 已读未读 / 回复**。
+> （前端直接把 emoji 或 base64 字符串传给 `avatar`）、**不做反馈列表查询 / 已读未读 / 回复**、
+> **不做「注销冷静期 / 可撤销 / 数据恢复」**（§12.7 删了就是删了）。
 > 引导**只记「完成 / 未完成」**：不记走到第几步、不记弹了几次，引导内容全在前端。
-> 决策细节见 `docs/decisions.md` §12（资料 / 通知 / 反馈）与 §14（新用户引导）。
+> 决策细节见 `docs/decisions.md` §12（资料 / 通知 / 反馈）、§14（新用户引导）与 §16（注销账号）。
 
 ### 12.1 查询当前用户资料
 
@@ -1862,4 +1865,58 @@ POST /api/user/onboarding-complete
 - **不记录**引导步骤 / 完成时间 / 弹过几次；**不改注册流程** —— 新用户靠列默认值 `0` 天然就是「未完成」；
 - 老用户（加列之前就在的账号）默认值也是 `0`，下次登录 `onboarded` 为 `false`；若不想让老用户看到引导，
   手动执行一次 `UPDATE user SET onboarded = 1 WHERE ...` 即可（`docs/decisions.md` §14.10）。
+
+
+---
+
+### 12.7 注销账号
+
+```
+DELETE /api/user/account
+```
+
+**请求体：**
+
+```
+{
+  "password": "Study2026a"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| password | string | 是 | 当前登录密码（明文）；后端用 BCrypt `matches` 校验，明文不落库、不打日志 |
+
+**响应：**
+
+```
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}
+```
+
+**错误：**
+
+| code | 场景 |
+| --- | --- |
+| 400 | `password` 没传 / 空串（`密码不能为空`）、密码不对（`密码错误`）、用户已不存在（`用户不存在`） |
+| 401 | 未登录或 token 失效 |
+
+**说明：**
+
+- 这是本项目**唯一带请求体的 DELETE**（其它 DELETE 只有路径参数）：注销不可恢复，必须重新输一遍密码，
+  **二次确认弹窗由前端负责**，后端只看密码对不对；
+- `userId` 只从 token 取（`@RequestAttribute`），接口**没有任何 userId 入参**，不存在「注销别人账号」的可能；
+- **物理删除，不是软删**（表里没有 `deleted` 列），也**不是**只删 `user` 表：按
+  `completion_record` → `chat_message` → `user_memory` → `feedback` → `task` → `task_template` →
+  `course` → `rest_time` → `user` 的顺序，把 9 张表里属于该用户的行全删掉
+  （前 8 张按 `user_id`，`user` 表按主键 `id`），**不校验各表删了几行**（本来就没数据也是成功）；
+- 整个删除在**一个事务**里（`@Transactional(rollbackFor = Exception.class)`）：任何一步失败全部回滚，
+  不会留下「删了一半」的账号；每张表删完记一条 `[注销] 删除表 xxx，影响 N 行` 的日志（只记表名与行数）；
+- 注销后 token 可能还没过期，但后续接口都会因为「用户不存在」返回 404（与 §12.5 同一口径），
+  **前端拿到成功响应后自己清 token、跳登录页** —— 后端**不做** token 黑名单 / 主动失效；
+- **不做**：软删除 / 回收站 / 数据恢复、注销冷静期、删除原因问卷、注销邮件通知、数据导出；
+- 口径细节见 `docs/decisions.md` §16（其中 §16.4 说明为什么 `feedback` 也一起删）。
 

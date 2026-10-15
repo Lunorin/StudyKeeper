@@ -1,5 +1,6 @@
 package studykeeper.controller;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import studykeeper.common.Result;
 import studykeeper.common.UsernameExistsException;
+import studykeeper.dto.DeleteAccountRequest;
 import studykeeper.dto.OnboardingStatusDTO;
 import studykeeper.dto.SubmitFeedbackRequest;
 import studykeeper.dto.UpdateNotificationsRequest;
@@ -19,11 +21,13 @@ import studykeeper.interceptor.JwtInterceptor;
 import studykeeper.service.UserService;
 
 /**
- * 用户资料接口（右上角头像那套）：资料、通知设置、AI 角色（persona）、意见反馈，外加新用户引导的两个状态接口。
+ * 用户资料接口（右上角头像那套）：资料、通知设置、AI 角色（persona）、意见反馈、注销账号，外加新用户引导的两个状态接口。
  * <p>
  * 只做这几件事：不涉及改密码、不做头像文件上传（前端直接传 emoji 或 base64 字符串）、
  * 反馈**只提交**（不做列表查询 / 已读未读 / 回复），引导**只记完成 / 未完成**
  * （引导内容与走到第几步都是前端的事）。
+ * 注销账号（{@link #deleteAccount}）走 `DELETE /api/user/account`：要带请求体（密码），
+ * 验过密码后物理删掉该用户的全部数据 —— **二次确认弹窗是前端的事，后端只管验密码 + 删干净**。
  * 手机号与邮箱的绑定就直接走 {@link #updateProfile}，不另开接口；AI 角色（persona）单独一个接口
  * （{@link #updatePersona}），因为它是固定白名单取值、与资料字段的校验规则完全不同。
  * <p>
@@ -148,6 +152,30 @@ public class UserController {
                                        @RequestBody SubmitFeedbackRequest request) {
         try {
             userService.submitFeedback(userId, request);
+            return Result.success();
+        } catch (IllegalArgumentException e) {
+            return Result.error(400, e.getMessage());
+        }
+    }
+
+    /**
+     * 注销账号（DELETE /api/user/account）：验密码 → 物理删除该用户的全部数据 → 返回 `Result.success()`。
+     * <p>
+     * 这是本项目**唯一带请求体的 DELETE**（其它 DELETE 都只有路径参数）：注销是不可恢复的高危操作，
+     * 必须让用户重新输一遍密码再删（前端负责「真的要注销吗」的二次确认弹窗，后端不替它拦手滑）。
+     * <p>
+     * 请求体只有一个 `password`（见 {@link DeleteAccountRequest}），userId 由 JwtInterceptor 从 token 取，
+     * **接口没有任何 userId 入参**，所以不存在「注销别人账号」的可能，也没有额外归属校验。
+     * <p>
+     * 失败一律 400：没带 / 空密码 → 「密码不能为空」；密码不对 → 「密码错误」；用户不存在 → 「用户不存在」。
+     * 删除范围与顺序由 Service 的事务保证（9 张表全删或全不删，见 {@code UserService.deleteAccount}）——
+     * **不是**软删、**不是**只删 user 表留一堆孤儿数据。
+     */
+    @DeleteMapping("/account")
+    public Result<Void> deleteAccount(@RequestAttribute(JwtInterceptor.USER_ID_ATTRIBUTE) Long userId,
+                                      @RequestBody DeleteAccountRequest request) {
+        try {
+            userService.deleteAccount(userId, request.getPassword());
             return Result.success();
         } catch (IllegalArgumentException e) {
             return Result.error(400, e.getMessage());

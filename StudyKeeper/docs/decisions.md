@@ -309,3 +309,25 @@
 
 
 
+## 16. 注销账号（只做后端）既定决策
+
+> 目标：提供 `DELETE /api/user/account` —— 验密码、把该用户的全部数据物理删干净、返回成功。
+> **只做后端**：二次确认弹窗、清 token、跳登录页都是前端的事（**前端一行没动**；Python 侧也一行没动，
+> 本步没有任何 DDL）。
+
+| # | 决策 | 说明 |
+| --- | --- | --- |
+| 16.1 | 接口形态 = `DELETE /api/user/account` + **请求体** | 全项目**唯一带 body 的 DELETE**（其余 DELETE 都只有 `/{id}`）。放在 `controller/UserController`（`/api/user/**` 已被 `JwtInterceptor` 覆盖，`WebConfig` 不用改）；userId 走 `@RequestAttribute(JwtInterceptor.USER_ID_ATTRIBUTE)`，**接口没有 userId 入参**，所以不存在「注销别人」的可能 |
+| 16.2 | 一定要验密码 | 与 `AuthService` 共用同一个 `BCryptPasswordEncoder`（`WebConfig` 里的 `@Bean`）做 `matches(明文, user.password)`：**不做明文比较、不把密码写进日志**。`password` 为 null / 空串**先拦一层** → 400「密码不能为空」（直接丢给 BCrypt 会抛英文的 `rawPassword cannot be null`）|
+| 16.3 | 错误码：这里**故意说清**是密码错还是用户不存在 | 登录（§1.2）是「账号或密码错误」不区分，避免探测账号；注销时**token 已经证明身份**，所以分开报：密码不对 → 400「密码错误」、用户已不存在 → 400「用户不存在」，排查更快。三种失败情况**都不动数据库** |
+| 16.4 | **物理删除，不用软删** | 表里也没有 `deleted` 列（本步**没有 DDL**）。范围 = 该用户在 **9 张表**里的全部行：`completion_record` / `chat_message` / `user_memory` / `feedback` / `task` / `task_template` / `course` / `rest_time` / `user`。**`feedback` 也一起删**（注销 = 数据不再保留，不为「反馈留着改进产品」开例外）；也刻意**不**只删 `user` 表 —— 那会留下一堆孤儿数据，统计 / 记忆 / 聊天历史还会继续算在已注销的人头上 |
+| 16.5 | 删除顺序 = 子表在前、主表在后 | `completion_record` → `chat_message` → `user_memory` → `feedback` → `task` → `task_template` → `course` → `rest_time` → `user`。本库只有索引、**没有外键**（`mysql/init/01-schema.sql` 里 `FOREIGN_KEY_CHECKS=0`），顺序其实不吃亏，但保留「子表先删」以后真加外键也不用改代码 |
+| 16.6 | 一个事务包住 9 条 delete | `@Transactional(rollbackFor = Exception.class)`（与 §12.4 提交反馈同一写法）。任何一步抛异常 → **全部回滚**，不会出现「删了一半」的账号。`delete(Wrapper)` / `deleteById` 在事务里就是普通 DML，不需要额外配置 |
+| 16.7 | 每步都记日志 | 每张表删完一条 `[注销] 删除表 {}，影响 {} 行`（表名 + 影响行数），开始 / 结束各一条；**不记密码、不记被删内容**。行数顺带能当「这个人有多少数据」的线索 |
+| 16.8 | 不做「标记待删 + 定时清理」，也不做软删 | 目标就是「注销即删干净」。代价是**误删不可恢复**（所以 16.2 要验密码 + 前端还要二次确认）；换来的是实现简单、不留孤儿数据、`user_id` 不会被历史数据反复引用 |
+| 16.9 | token 不做黑名单 | 注销后 token 可能还没过期，但所有业务接口都会因「用户不存在」返回 404（`/me`、profile、onboarding-status 早就是这个口径）。前端拿到 `code: 0` 后自己清 token 跳登录页；后端**不引入** Redis / 黑名单表 |
+| 16.10 | 注入方式 | `UserService` 构造器从 2 个参数（UserMapper + FeedbackMapper）扩到 **9 个 Mapper + `BCryptPasswordEncoder`**（Spring 构造器注入，不用 `@Autowired`）；**没有新依赖**，既有 Mapper 一个都没改（`FeedbackMapper` 只是被多调了一个 `delete`） |
+| 16.11 | 本步明确不做 | 软删除 / 回收站 / 恢复、注销冷静期（如「7 天后生效」）、删除原因问卷、注销确认邮件、数据导出、token 黑名单、删除后的埋点、前端任何改动、Python 侧任何改动、DDL（不加 `deleted` 列、不加注销日志表）|
+| 16.12 | 验证方式 | 新增 `DeleteAccountLightTempTests`（9 个用例，**不连库、不起 Spring 容器、不用 Mockito**：9 个 Mapper 全用 JDK 动态代理假实现、密码用真 BCrypt 生成）——断言：① 9 张表按 16.5 的顺序各删一次，前 8 张的 wrapper 都是 `user_id = 7`、`user` 表是 `id = 7`（且**不含** `user_id`，`user` 表没这列）；② 密码错 / 空密码 / 用户不存在时**一张表都不动**；③ 删到第 5 张表失败时异常往外抛（配合 16.6 的注解断言 → 会回滚）；④ `@Transactional.rollbackFor() == {Exception.class}`；⑤ Controller 的 `0` / `400 密码错误` / `400 密码不能为空` / `400 用户不存在` 映射，且 userId 确实来自 request attribute。既有 `PasswordStrengthLightTempTests` 12 个用例仍全绿（`UserService` 构造器改了参数，但没人手工 new 它）|
+
+

@@ -95,3 +95,21 @@ export function getOnboardingStatus() {
 export function completeOnboarding() {
   return request.post('/user/onboarding-complete')
 }
+
+/**
+ * 注销账号(需要 token,硬删)
+ * DELETE /api/user/account
+ *
+ * 语义:**永久删除当前账号及其全部数据**(任务与历史记录、聊天记录 / AI 记忆、课程表与休息时间、学习统计)。
+ * 后端是硬删除 —— 没有冷静期、没有软删除,调用即生效且不可恢复,所以前端必须做两步确认后才调这里。
+ * 请求体带登录密码做二次校验:**密码不对后端返回 400「密码错误」**(见 docs/api.md §12.7),前端据此提示「密码错误」。
+ *
+ * 注意:DELETE 带请求体在 axios 里必须写成 request.delete(url, { data }),
+ *      直接写第二参数会被当成 config(请求配置)丢掉请求体。
+ *
+ * @param {{ password: string }} data 当前账号的登录密码(明文,后端用 BCrypt 校验,不落库)
+ * @returns {Promise<null>} 成功时后端返回 { code: 0, data: null }(拦截器解包后为 null)
+ */
+export function deleteAccount(data) {
+  return request.delete('/user/account', { data })
+}

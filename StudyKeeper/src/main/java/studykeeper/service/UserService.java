@@ -3,6 +3,7 @@ package studykeeper.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import studykeeper.common.UsernameExistsException;
@@ -11,10 +12,24 @@ import studykeeper.dto.UpdateNotificationsRequest;
 import studykeeper.dto.UpdatePersonaRequest;
 import studykeeper.dto.UpdateProfileRequest;
 import studykeeper.dto.UserProfileDTO;
+import studykeeper.entity.ChatMessage;
+import studykeeper.entity.CompletionRecord;
+import studykeeper.entity.Course;
 import studykeeper.entity.Feedback;
+import studykeeper.entity.RestTime;
+import studykeeper.entity.Task;
+import studykeeper.entity.TaskTemplate;
 import studykeeper.entity.User;
+import studykeeper.entity.UserMemory;
+import studykeeper.mapper.ChatMessageMapper;
+import studykeeper.mapper.CompletionRecordMapper;
+import studykeeper.mapper.CourseMapper;
 import studykeeper.mapper.FeedbackMapper;
+import studykeeper.mapper.RestTimeMapper;
+import studykeeper.mapper.TaskMapper;
+import studykeeper.mapper.TaskTemplateMapper;
 import studykeeper.mapper.UserMapper;
+import studykeeper.mapper.UserMemoryMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -22,18 +37,20 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * 用户资料 + 通知设置 + 意见反馈 + 新用户引导状态业务层。
+ * 用户资料 + 通知设置 + 意见反馈 + 新用户引导状态 + 注销账号业务层。
  * <p>
  * 对应接口：GET / PUT /api/user/profile（资料）、PUT /api/user/notifications（通知设置）、PUT /api/user/persona（AI 角色）、
  * GET /api/user/onboarding-status（引导状态）、POST /api/user/onboarding-complete（标记引导完成）、
- * POST /api/user/feedback（意见反馈）。
+ * POST /api/user/feedback（意见反馈）、DELETE /api/user/account（注销账号）。
  * <p>
  * 边界：资料只读写 user 表里 nickname / username / avatar / phone / email / persona 这几个字段，
  * **不碰 password**（改密码单独做），也**不管注册 / 登录**（那是 AuthService 的事）；
  * 反馈只往 feedback 表插一条，**不做列表查询 / 不做已读未读 / 不做回复**（docs/api.md §12.4）；
  * 引导**只记「完成 / 未完成」一格**（user.onboarded），不做步骤记录、不做引导内容（那是前端的事）；
  * AI 角色（persona）**只做取值白名单校验**（default / zeng_guofan / truth_doctor），
- * 不存人格文案、不做人格管理（人格内容在 Python 侧 app/services/personas.py）。
+ * 不存人格文案、不做人格管理（人格内容在 Python 侧 app/services/personas.py）；
+ * 注销（{@link #deleteAccount}）是**唯一会删整行用户**的地方：验密码 → 物理删掉该用户 9 张表的全部数据
+ * （**不用软删**，表里也没有 deleted 列），整个删除在一个事务里。
  */
 @Service
 public class UserService {
@@ -100,9 +117,47 @@ public class UserService {
 
     private final FeedbackMapper feedbackMapper;
 
-    public UserService(UserMapper userMapper, FeedbackMapper feedbackMapper) {
+    /**
+     * 注销账号要删的那 7 张「用户数据表」的 Mapper（不算 user 与 feedback，那两个上面 / 下面各有字段）。
+     * <p>
+     * 顺序与 {@link #deleteAccount} 里删表的顺序一致：completion_record → chat_message → user_memory
+     * → task → task_template → course → rest_time。
+     */
+    private final TaskMapper taskMapper;
+
+    private final TaskTemplateMapper taskTemplateMapper;
+
+    private final CourseMapper courseMapper;
+
+    private final RestTimeMapper restTimeMapper;
+
+    private final CompletionRecordMapper completionRecordMapper;
+
+    private final ChatMessageMapper chatMessageMapper;
+
+    private final UserMemoryMapper userMemoryMapper;
+
+    /**
+     * BCrypt 校验器：与 AuthService 用的是**同一个 `@Bean` 单例**（`WebConfig.passwordEncoder`）。
+     * 注销时用 `matches(明文, user.password)` 验密码，**不做任何明文比较**，也**不把密码写进日志**。
+     */
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    public UserService(UserMapper userMapper, FeedbackMapper feedbackMapper,
+                       TaskMapper taskMapper, TaskTemplateMapper taskTemplateMapper,
+                       CourseMapper courseMapper, RestTimeMapper restTimeMapper,
+                       CompletionRecordMapper completionRecordMapper, ChatMessageMapper chatMessageMapper,
+                       UserMemoryMapper userMemoryMapper, BCryptPasswordEncoder passwordEncoder) {
         this.userMapper = userMapper;
         this.feedbackMapper = feedbackMapper;
+        this.taskMapper = taskMapper;
+        this.taskTemplateMapper = taskTemplateMapper;
+        this.courseMapper = courseMapper;
+        this.restTimeMapper = restTimeMapper;
+        this.completionRecordMapper = completionRecordMapper;
+        this.chatMessageMapper = chatMessageMapper;
+        this.userMemoryMapper = userMemoryMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -259,6 +314,81 @@ public class UserService {
         feedback.setContent(content);
         feedback.setCreatedAt(LocalDateTime.now());
         feedbackMapper.insert(feedback);
+    }
+
+    /**
+     * 注销账号（DELETE /api/user/account）：先验密码，再把该用户的**全部数据物理删除**，没有返回值。
+     * <p>
+     * 步骤：查 user → 不存在就抛 → 验密码 → 按「子表 → 主表」删 9 张表 → 删 user 自己。
+     * 每张表删完都记一条 `[注销] 删除表 {}，影响 {} 行` 的日志（只记表名与行数，**不记密码、不记内容**），
+     * 出事时对着日志就能看出删到第几张表、每张表删了多少行。
+     * <p>
+     * 失败一律抛 {@link IllegalArgumentException}（Controller 转成 400）：用户不存在 → 「用户不存在」；
+     * password 为 null / 空串 → 「密码不能为空」（先拦一层，避免把 null 丢给 BCrypt）；
+     * BCrypt 校验不通过 → 「密码错误」。**三种情况都不动数据库**。
+     * <p>
+     * <b>物理删除，不做软删</b>（表里也没有 deleted 列）；也**不是**只删 user 表 —— 那样会留下一堆孤儿数据，
+     * 统计 / 记忆 / 聊天历史会继续算在「已经注销的人」头上。删除顺序（与 docs/decisions.md §16 一致）：
+     * completion_record → chat_message → user_memory → feedback → task → task_template → course → rest_time → user。
+     * 现在是「子表在前、主表在后」（本库只有索引、没有外键，顺序不吃亏；留着这个顺序是为了将来真加外键时也能过）。
+     * <p>
+     * 整个方法在一个事务里（`rollbackFor = Exception.class`）：任何一步抛异常，**前面已经删掉的表全部回滚**，
+     * 不会出现「删了一半」的账号。注销后 token 仍可能没过期，但后续接口都会因为「用户不存在」返回 404，
+     * 前端拿到成功响应后自己清 token 跳登录页。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAccount(Long userId, String password) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("密码不能为空");
+        }
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("密码错误");
+        }
+
+        // 走到这里说明密码没问题，后面 9 条 delete 要么全成功、要么全回滚
+        log.info("[注销] 用户 {} 开始注销，准备删除其全部数据", userId);
+
+        int completionRecordRows = completionRecordMapper.delete(new LambdaQueryWrapper<CompletionRecord>()
+                .eq(CompletionRecord::getUserId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "completion_record", completionRecordRows);
+
+        int chatMessageRows = chatMessageMapper.delete(new LambdaQueryWrapper<ChatMessage>()
+                .eq(ChatMessage::getUserId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "chat_message", chatMessageRows);
+
+        int userMemoryRows = userMemoryMapper.delete(new LambdaQueryWrapper<UserMemory>()
+                .eq(UserMemory::getUserId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "user_memory", userMemoryRows);
+
+        int feedbackRows = feedbackMapper.delete(new LambdaQueryWrapper<Feedback>()
+                .eq(Feedback::getUserId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "feedback", feedbackRows);
+
+        int taskRows = taskMapper.delete(new LambdaQueryWrapper<Task>()
+                .eq(Task::getUserId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "task", taskRows);
+
+        int taskTemplateRows = taskTemplateMapper.delete(new LambdaQueryWrapper<TaskTemplate>()
+                .eq(TaskTemplate::getUserId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "task_template", taskTemplateRows);
+
+        int courseRows = courseMapper.delete(new LambdaQueryWrapper<Course>()
+                .eq(Course::getUserId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "course", courseRows);
+
+        int restTimeRows = restTimeMapper.delete(new LambdaQueryWrapper<RestTime>()
+                .eq(RestTime::getUserId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "rest_time", restTimeRows);
+
+        int userRows = userMapper.delete(new LambdaQueryWrapper<User>()
+                .eq(User::getId, userId));
+        log.info("[注销] 删除表 {}，影响 {} 行", "user", userRows);
+
+        log.info("[注销] 用户 {} 注销完成", userId);
     }
 
     /**
