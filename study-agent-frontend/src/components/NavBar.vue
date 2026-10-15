@@ -6,6 +6,7 @@ import {
   Bell,
   ChatDotRound,
   Collection,
+  Delete,
   Iphone,
   List,
   Setting,
@@ -18,6 +19,7 @@ import ProfileDialog from './ProfileDialog.vue'
 import BindDialog from './BindDialog.vue'
 import NotifyDialog from './NotifyDialog.vue'
 import FeedbackDialog from './FeedbackDialog.vue'
+import DeleteAccountDialog from './DeleteAccountDialog.vue'
 import { DEFAULT_AVATAR, clearUserInfo, isImageAvatar, loadProfile, userInfo } from '../stores/user'
 
 const router = useRouter()
@@ -45,6 +47,8 @@ const bindVisible = ref(false)
 const notifyVisible = ref(false)
 /** 意见反馈弹窗显隐 */
 const feedbackVisible = ref(false)
+/** 注销账号弹窗(两步确认)显隐 */
+const deleteAccountVisible = ref(false)
 /** 菜单容器:用来判断点击是否落在菜单外面 */
 const menuContainerRef = ref(null)
 
@@ -101,6 +105,15 @@ function handleNotify() {
 function handleFeedback() {
   menuVisible.value = false
   feedbackVisible.value = true
+}
+
+/**
+ * 打开「注销账号」弹窗(两步确认)。
+ * 校验 / 调接口 / 清登录态都在 DeleteAccountDialog 里,这里只负责收起菜单、开弹窗。
+ */
+function handleDeleteAccount() {
+  menuVisible.value = false
+  deleteAccountVisible.value = true
 }
 
 /** 退出:先调接口(不管成功失败),再清本地登录态与用户资料并回登录页 */
@@ -166,6 +179,17 @@ async function handleLogout() {
             <span>意见反馈</span>
           </button>
 
+          <!-- 注销账号:菜单里和其它项同款(黑色字体),危险程度交给两步弹窗兜住 -->
+          <button
+            class="user-menu-item"
+            type="button"
+            data-menu="delete-account"
+            @click="handleDeleteAccount"
+          >
+            <el-icon class="user-menu-icon"><Delete /></el-icon>
+            <span>注销账号</span>
+          </button>
+
           <div class="user-menu-divider"></div>
 
           <button class="user-menu-item user-menu-danger" type="button" @click="handleLogout">
@@ -184,6 +208,8 @@ async function handleLogout() {
     <NotifyDialog v-model:visible="notifyVisible" />
     <!-- 意见反馈 -->
     <FeedbackDialog v-model:visible="feedbackVisible" />
+    <!-- 注销账号(两步确认:警告说明 → 身份验证) -->
+    <DeleteAccountDialog v-model:visible="deleteAccountVisible" />
   </nav>
 </template>
 
